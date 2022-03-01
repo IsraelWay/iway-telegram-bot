@@ -1,7 +1,6 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 
 from __future__ import print_function
-import time
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from pprint import pprint
@@ -16,7 +15,7 @@ def send(to, name, content, subject, _tags=None, sender=None):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = subject  # "Hi there! This is IsraelWay."
     html_content = content
-    sender = {"name": "Ilya Polotsky (IsraelWay)", "email": "ilya.polotsky@israelway.com"}
+    sender = {"name": "IsraelWay Team", "email": "team@israelway.ru"}
     to = [{"email": to, "name": name}]
     cc = [{"email": "ilyapolo@yandex.ru", "name": "Ilya Polotsky (yandex)"}]
     # bcc = [{"name": "John Doe", "email": "example@example.com"}]
