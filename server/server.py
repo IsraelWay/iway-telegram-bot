@@ -2,13 +2,14 @@
 import threading
 
 from time import sleep
-from flask import Flask
+from flask import Flask, request
 
 from mail import mail_service
 from mail.mail_service import render_mail
 from main import get_updater
 from flask_httpauth import HTTPTokenAuth
 
+from server.iway_responses import DetailedResponse
 from settings import Settings
 
 c = threading.Condition()
@@ -28,15 +29,28 @@ def verify_token(token):
         return True
 
 
-@app.route("/anketa")
+@app.route("/anketa", methods=['POST'])
 @auth.login_required
 def send_anketa():
+    email, anketa_link, full_name = None, None, None
+    request_data = request.get_json()
+    if "email" in request_data:
+        email = request_data['email']
+    if "anketa_link" in request_data:
+        anketa_link = request_data['anketa_link']
+    if "full_name" in request_data:
+        full_name = request_data['full_name']
+
+    if not email or not anketa_link or not full_name:
+        return DetailedResponse(result=False, message="Email/anketa_link/full_name are not set",
+                                payload=[email, anketa_link, full_name]).__dict__
+
     mail_html = render_mail(template_name="anketa.html",
-                            full_name="Красавчик",
-                            anketa_link="https://google.com",
+                            full_name=full_name,
+                            anketa_link=anketa_link,
                             unsubscribe_link="https://israelway.ru/unsubscribe")
-    mail_service.send(to="ipolo.box@gmail.com", name="Ilya Polotsky", content=mail_html)
-    return {"result": True, "message": "Email sent successfully"}
+    mail_service.send(to=email, name=full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
 @app.route('/')
