@@ -14,6 +14,10 @@ class Settings:
         return os.environ[f"SENDINBLUE_KEY{'_TEST' if Settings.IS_TEST else ''}"]
 
     @staticmethod
+    def auth_token():
+        return os.environ[f"AUTH_TOKEN{'_TEST' if Settings.IS_TEST else ''}"]
+
+    @staticmethod
     def bot_name() -> str:
         return "masa_israelway_bot" if Settings.IS_TEST else "test_masa_israelway_bot"
 
