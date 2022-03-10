@@ -11,10 +11,14 @@ from flask_httpauth import HTTPTokenAuth
 
 from server.iway_responses import DetailedResponse
 from settings import Settings
+from flask_cors import CORS, cross_origin
 
 c = threading.Condition()
 
 app = Flask("Flask")
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
 auth = HTTPTokenAuth(scheme='Bearer')
 print("Server is running")
 

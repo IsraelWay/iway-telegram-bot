@@ -6,3 +6,5 @@ pypng==0.0.20
 firebase-admin==5.2.0
 sib-api-v3-sdk==7.3.0
 flask==2.0.2
+flask_httpauth==4.5.0
+flask_cors==3.0.10
