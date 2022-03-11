@@ -49,7 +49,8 @@ let response = await fetch(host + '/anketa', {
   body: JSON.stringify({
       email: record.getCellValueAsString("Email"),
       anketa_link: link,
-      full_name: record.getCellValueAsString("Info")
+      full_name: record.getCellValueAsString("Info"),
+      id_record: record.id
   })
 })
 .catch( error => {
@@ -64,5 +65,9 @@ if (!data.result) {
     output.inspect(data);
     return;
 }
+
+await leads.updateRecordAsync(record, {
+    '(auto) Анкета отправлена': true,
+});
 
 output.markdown(`### Анкета (${record.getCellValueAsString('target')}) успешно отправлена`);

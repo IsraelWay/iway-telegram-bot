@@ -22,10 +22,6 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 auth = HTTPTokenAuth(scheme='Bearer')
 print("Server is running")
 
-tokens = {
-    "secret-token-1": "airtable",
-}
-
 
 @auth.verify_token
 def verify_token(token):
@@ -33,10 +29,34 @@ def verify_token(token):
         return True
 
 
+@app.route("/welcome", methods=['POST'])
+@auth.login_required
+def welcome():
+    email, full_name, id_record = None, None, None
+    request_data = request.get_json()
+    if "email" in request_data:
+        email = request_data['email']
+    if "full_name" in request_data:
+        full_name = request_data['full_name']
+    if "id_record" in request_data:
+        id_record = request_data['id_record']
+
+    if not email or not full_name:
+        return DetailedResponse(result=False, message="Email or full_name are not set",
+                                payload=[email, full_name]).__dict__
+
+    mail_html = render_mail(template_name="welcome.html",
+                            full_name=full_name,
+                            id_record=id_record)
+
+    mail_service.send(to=email, name=full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/anketa", methods=['POST'])
 @auth.login_required
 def send_anketa():
-    email, anketa_link, full_name = None, None, None
+    email, anketa_link, full_name, id_record = None, None, None, None
     request_data = request.get_json()
     if "email" in request_data:
         email = request_data['email']
@@ -44,6 +64,8 @@ def send_anketa():
         anketa_link = request_data['anketa_link']
     if "full_name" in request_data:
         full_name = request_data['full_name']
+    if "id_record" in request_data:
+        id_record = request_data['id_record']
 
     if not email or not anketa_link or not full_name:
         return DetailedResponse(result=False, message="Email/anketa_link/full_name are not set",
@@ -52,7 +74,7 @@ def send_anketa():
     mail_html = render_mail(template_name="anketa.html",
                             full_name=full_name,
                             anketa_link=anketa_link,
-                            unsubscribe_link="https://israelway.ru/unsubscribe")
+                            id_record=id_record)
     mail_service.send(to=email, name=full_name, content=mail_html)
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
@@ -64,7 +86,7 @@ def hello():
     updater.bot.send_message(75771603, "Запрос на /")
     c.notify_all()
     c.release()
-    return 'Welcome to IsraelWay Bot API 1.0'
+    return 'Welcome to IsraelWay API 1.0'
 
 
 def run_server():
