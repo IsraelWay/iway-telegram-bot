@@ -21,6 +21,10 @@ class Settings:
     def bot_name() -> str:
         return "masa_israelway_bot" if Settings.IS_TEST else "test_masa_israelway_bot"
 
+    @staticmethod
+    def first_questions_link() -> str:
+        return "https://web.miniextensions.com/YknIZlIqVswRiGObohd4/" if Settings.IS_TEST else "https://web.miniextensions.com/YknIZlIqVswRiGObohd4/"
+
 
 if Settings.IS_TEST:
     print("Test environment")

@@ -18,6 +18,8 @@ console.log("Connecting to: " + host);
 
 
 let inputConfig = input.config();
+let preferred_dates =
+    base.getTable("Leads").getField("prefer_dates").options.choices.map(option => option.name).join(", ");
 
 let response = await fetch(host + '/welcome', {
   method: 'POST',
@@ -28,7 +30,8 @@ let response = await fetch(host + '/welcome', {
   body: JSON.stringify({
       email: inputConfig.email,
       full_name: inputConfig.full_name,
-      id_record: inputConfig.id_record
+      id_record: inputConfig.id_record,
+      preferred_dates: preferred_dates,
   })
 })
 .catch( error => {
