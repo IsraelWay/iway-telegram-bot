@@ -25,6 +25,14 @@ class Settings:
     def first_questions_link() -> str:
         return "https://web.miniextensions.com/YknIZlIqVswRiGObohd4/" if Settings.IS_TEST else "https://web.miniextensions.com/YknIZlIqVswRiGObohd4/"
 
+    @staticmethod
+    def details_form() -> str:
+        return "https://web.miniextensions.com/b2kiZbC976kwEuizeeHY" if Settings.IS_TEST else "https://web.miniextensions.com/b2kiZbC976kwEuizeeHY"
+
+    @staticmethod
+    def masa_form() -> str:
+        return "https://web.miniextensions.com/K3pC5QWCpRHcntwO6n63" if Settings.IS_TEST else "https://web.miniextensions.com/K3pC5QWCpRHcntwO6n63"
+
 
 if Settings.IS_TEST:
     print("Test environment")

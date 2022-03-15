@@ -1,5 +1,6 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 import threading
+from pprint import pprint
 
 from time import sleep
 from flask import Flask, request
@@ -57,23 +58,25 @@ def welcome():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/anketa", methods=['POST'])
+@app.route("/anketa/masa", methods=['POST'])
 @auth.login_required
 def send_anketa():
-    email, anketa_link, full_name, id_record = None, None, None, None
+    email, full_name, id_record, id_form_record = None, None, None, None
     request_data = request.get_json()
     if "email" in request_data:
         email = request_data['email']
-    if "anketa_link" in request_data:
-        anketa_link = request_data['anketa_link']
     if "full_name" in request_data:
         full_name = request_data['full_name']
     if "id_record" in request_data:
         id_record = request_data['id_record']
+    if "id_form_record" in request_data:
+        id_form_record = request_data['id_form_record']
 
-    if not email or not anketa_link or not full_name:
-        return DetailedResponse(result=False, message="Email/anketa_link/full_name are not set",
-                                payload=[email, anketa_link, full_name]).__dict__
+    if not email or not full_name:
+        return DetailedResponse(result=False, message="Email full_name are not set",
+                                payload=[email, full_name]).__dict__
+
+    anketa_link = Settings.masa_form() + "/" + id_form_record
 
     mail_html = render_mail(template_name="anketa.html",
                             full_name=full_name,
@@ -81,6 +84,43 @@ def send_anketa():
                             id_record=id_record)
     mail_service.send(to=email, name=full_name, content=mail_html)
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
+@app.route("/plan", methods=['POST'])
+@auth.login_required
+def send_plan():
+    email, target, full_name, id_record = None, None, None, None
+    request_data = request.get_json()
+    if "email" in request_data:
+        email = request_data['email']
+    if "target" in request_data:
+        target = request_data['target']
+    if "full_name" in request_data:
+        full_name = request_data['full_name']
+    if "id_record" in request_data:
+        id_record = request_data['id_record']
+
+    if not email or not target or not full_name:
+        return DetailedResponse(result=False, message="Email / target / full_name are not set",
+                                payload=[email, target, full_name]).__dict__
+
+    mail_html = render_mail(
+        template_name="plan_" + target + ".html",
+        full_name=full_name,
+        id_record=id_record,
+        details_form_link=Settings.details_form())
+    mail_service.send(to=email, name=full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
+@app.route("/hook", methods=['POST'])
+def hook():
+    pprint(request.files)
+    pprint(request.form)
+    pprint(request.json)
+    pprint(request.query_string)
+    pprint(request.data)
+    return "sone"
 
 
 @app.route('/')

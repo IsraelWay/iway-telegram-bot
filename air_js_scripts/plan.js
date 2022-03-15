@@ -17,7 +17,7 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка анекты масы")
+output.markdown("Отправка на почту плана + запроса на данные")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
 
@@ -25,29 +25,22 @@ if (!record) {
     output.markdown("Запись на найдена, напишите Илюше");
     return;
 }
+if (!record.getCellValue("Первичное интервью")) {
+    output.markdown("Первичное интервью не пройдено");
+    return;
+}
 if (!record.getCellValue("target")) {
     output.markdown("Не указан target - направление, куда хочет лид");
     return;
 }
-if (record.getCellValueAsString("target") != "masa") {
-    output.markdown("Направление не маса (" + record.getCellValueAsString("target") + ")");
-    return;
-}
 
-let anketa = record.getCellValue("Анкета масы");
-let anketa_id = null;
-if (!anketa) {
-    let ankets = base.getTable("Masa анкеты");
-    anketa_id = await ankets.createRecordAsync({
-        'Lead': [{id: record.id}],
-    });
-}
-else {
-    anketa_id = anketa[0].id;
-}
+// let link = record.getCellValueAsString("target") == "onward" ?
+//     "https://web.miniextensions.com/0xDnvFzxiNW1okIC8bJB":
+//     "https://web.miniextensions.com/K3pC5QWCpRHcntwO6n63";
+// link += "?prefill_Lead=" + record.id;
 
 
-let response = await fetch(host + '/anketa/masa', {
+let response = await fetch(host + '/plan', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -55,8 +48,8 @@ let response = await fetch(host + '/anketa/masa', {
   },
   body: JSON.stringify({
       email: record.getCellValueAsString("Email"),
+      target: record.getCellValueAsString("target"),
       full_name: record.getCellValueAsString("Info"),
-      id_form_record: anketa_id,
       id_record: record.id
   })
 })
@@ -74,7 +67,7 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) анкета маса отправлена': true,
+    '(auto) письмо план + запрос на данные': true,
 });
 
-output.markdown(`### Анкета (${record.getCellValueAsString('target')}) успешно отправлена`);
+output.markdown(`### План (${record.getCellValueAsString('target')}) успешно отправлен`);

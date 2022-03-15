@@ -31,7 +31,7 @@ let response = await fetch(host + '/welcome', {
       email: inputConfig.email,
       full_name: inputConfig.full_name,
       id_record: inputConfig.id_record,
-      preferred_dates: preferred_dates,
+      preferred_dates: preferred_dates
   })
 })
 .catch( error => {
