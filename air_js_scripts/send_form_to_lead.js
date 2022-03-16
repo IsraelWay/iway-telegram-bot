@@ -46,6 +46,16 @@ else {
     anketa_id = anketa[0].id;
 }
 
+// тело письма
+let email_templates_base = base.getTable("Шаблоны писем");
+let email_templates = await email_templates_base.selectRecordsAsync();
+let email_html = "";
+for (let template of email_templates.records) {
+   if (template.getCellValueAsString("Название письма") == "anketa_masa") {
+       email_html = template.getCellValueAsString("Html");
+       break;
+   }
+}
 
 let response = await fetch(host + '/anketa/masa', {
   method: 'POST',
@@ -57,7 +67,9 @@ let response = await fetch(host + '/anketa/masa', {
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
       id_form_record: anketa_id,
-      id_record: record.id
+      email_html: email_html,
+      id_record: record.id,
+      tg_id: record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {

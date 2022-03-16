@@ -34,12 +34,18 @@ if (!record.getCellValue("target")) {
     return;
 }
 
-// let link = record.getCellValueAsString("target") == "onward" ?
-//     "https://web.miniextensions.com/0xDnvFzxiNW1okIC8bJB":
-//     "https://web.miniextensions.com/K3pC5QWCpRHcntwO6n63";
-// link += "?prefill_Lead=" + record.id;
+// тело письма
+let email_templates_base = base.getTable("Шаблоны писем");
+let email_templates = await email_templates_base.selectRecordsAsync();
+let email_html = "";
+for (let template of email_templates.records) {
+   if (template.getCellValueAsString("Название письма") == "plan_" + record.getCellValueAsString("target")) {
+       email_html = template.getCellValueAsString("Html");
+       break;
+   }
+}
 
-
+// запрос
 let response = await fetch(host + '/plan', {
   method: 'POST',
   headers: {
@@ -50,7 +56,9 @@ let response = await fetch(host + '/plan', {
       email: record.getCellValueAsString("Email"),
       target: record.getCellValueAsString("target"),
       full_name: record.getCellValueAsString("Info"),
-      id_record: record.id
+      email_html: email_html,
+      id_record: record.id,
+      tg_id: record.getCellValueAsString("tg_id"),
   })
 })
 .catch( error => {

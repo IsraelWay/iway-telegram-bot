@@ -16,11 +16,23 @@ if (!host || !token) {
 console.log("Connecting to: " + host);
 // end server access
 
-
+// предпочтительные даты
 let inputConfig = input.config();
 let preferred_dates =
     base.getTable("Leads").getField("prefer_dates").options.choices.map(option => option.name).join(", ");
 
+// тело письма
+let email_templates_base = base.getTable("Шаблоны писем");
+let email_templates = await email_templates_base.selectRecordsAsync();
+let email_html = "";
+for (let template of email_templates.records) {
+   if (template.getCellValueAsString("Название письма") == "welcome") {
+       email_html = template.getCellValueAsString("Html");
+       break;
+   }
+}
+
+// запрос
 let response = await fetch(host + '/welcome', {
   method: 'POST',
   headers: {
@@ -29,6 +41,7 @@ let response = await fetch(host + '/welcome', {
   },
   body: JSON.stringify({
       email: inputConfig.email,
+      email_html: email_html,
       full_name: inputConfig.full_name,
       id_record: inputConfig.id_record,
       preferred_dates: preferred_dates
