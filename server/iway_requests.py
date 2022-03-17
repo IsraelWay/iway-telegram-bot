@@ -42,3 +42,8 @@ class AirtableRequest:
             self.consul_info = request_data['consul_info']
         elif "consul_info" in required_fields:
             raise Exception("No required param consul_info")
+
+        if "report_ua_url" in request_data:
+            self.report_ua_url = request_data['report_ua_url']
+        elif "report_ua_url" in required_fields:
+            raise Exception("No required param report_ua_url")

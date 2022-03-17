@@ -147,6 +147,27 @@ def invitation_letter():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+@app.route("/report-ua", methods=['POST'])
+@auth.login_required
+def send_report_ua():
+    try:
+        air_request = AirtableRequest(request, ["report_ua_url", "email_html"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="report-ua.html",
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=air_request.email_html,
+        report_ua_url=air_request.report_ua_url,
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/hook", methods=['POST'])
 def hook():
     pprint(request.files)
