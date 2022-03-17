@@ -10,6 +10,7 @@ from mail.mail_service import render_mail
 from main import get_updater
 from flask_httpauth import HTTPTokenAuth
 
+from server.iway_requests import AirtableRequest
 from server.iway_responses import DetailedResponse
 from settings import Settings
 from flask_cors import CORS, cross_origin
@@ -119,6 +120,30 @@ def send_plan():
         email_html=email_html,
         details_form_link=Settings.details_form())
     mail_service.send(to=email, name=full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
+@app.route("/invitation-letter", methods=['POST'])
+@auth.login_required
+def invitation_letter():
+    try:
+        air_request = AirtableRequest(request, ["invitation_url", "email_html", "consul_info"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="invitation-letter.html",
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=air_request.email_html,
+        consul_date_form_url=Settings.consul_date_form(),
+        consul_info=air_request.consul_info,
+        invitation_url=air_request.invitation_url,
+        consul_confirm_form_url=Settings.consul_confirm_form()
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 

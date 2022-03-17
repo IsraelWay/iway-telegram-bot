@@ -33,6 +33,14 @@ class Settings:
     def masa_form() -> str:
         return "https://web.miniextensions.com/K3pC5QWCpRHcntwO6n63" if Settings.IS_TEST else "https://web.miniextensions.com/K3pC5QWCpRHcntwO6n63"
 
+    @staticmethod
+    def consul_date_form() -> str:
+        return "https://web.miniextensions.com/YA4sDCqK6QN1dMY8lmXR" if Settings.IS_TEST else "https://web.miniextensions.com/YA4sDCqK6QN1dMY8lmXR"
+
+    @staticmethod
+    def consul_confirm_form() -> str:
+        return "https://web.miniextensions.com/YbxdaJAnYvG0aOFOItrX" if Settings.IS_TEST else "https://web.miniextensions.com/YbxdaJAnYvG0aOFOItrX"
+
 
 if Settings.IS_TEST:
     print("Test environment")
