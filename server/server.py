@@ -168,6 +168,30 @@ def send_report_ua():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+@app.route("/agreement", methods=['POST'])
+@auth.login_required
+def agreement():
+    try:
+        air_request = AirtableRequest(request, ["email_picture", "agreement_text_url", "fill_agreement_url"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="agreement.html",
+        email_picture=air_request.email_picture,
+        agreement_text_url=air_request.agreement_text_url,
+        fill_agreement_url=air_request.fill_agreement_url,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=air_request.email_html,
+        upload_agreement_form=Settings.upload_agreement_form()
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/hook", methods=['POST'])
 def hook():
     pprint(request.files)

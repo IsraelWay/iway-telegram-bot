@@ -41,6 +41,11 @@ class Settings:
     def consul_confirm_form() -> str:
         return "https://web.miniextensions.com/YbxdaJAnYvG0aOFOItrX" if Settings.IS_TEST else "https://web.miniextensions.com/YbxdaJAnYvG0aOFOItrX"
 
+    @staticmethod
+    def upload_agreement_form() -> str:
+        return "https://web.miniextensions.com/vdYsbDSHBZGidRbb5aaA" if Settings.IS_TEST else "https://web.miniextensions.com/vdYsbDSHBZGidRbb5aaA"
+
+
 
 if Settings.IS_TEST:
     print("Test environment")

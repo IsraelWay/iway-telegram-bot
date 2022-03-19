@@ -47,3 +47,18 @@ class AirtableRequest:
             self.report_ua_url = request_data['report_ua_url']
         elif "report_ua_url" in required_fields:
             raise Exception("No required param report_ua_url")
+
+        if "agreement_text_url" in request_data:
+            self.agreement_text_url = request_data['agreement_text_url']
+        elif "agreement_text_url" in required_fields:
+            raise Exception("No required param agreement_text_url")
+
+        if "email_picture" in request_data:
+            self.email_picture = request_data['email_picture']
+        elif "email_picture" in required_fields:
+            raise Exception("No required param email_picture")
+
+        if "fill_agreement_url" in request_data:
+            self.fill_agreement_url = request_data['fill_agreement_url']
+        elif "fill_agreement_url" in required_fields:
+            raise Exception("No required param fill_agreement_url")
