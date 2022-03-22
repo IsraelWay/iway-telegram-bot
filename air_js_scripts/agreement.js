@@ -41,6 +41,12 @@ prefill_uri.push("address=" + record.getCellValueAsString("Страна (from Г
 prefill_uri.push("mother_phone=" + record.getCellValueAsString("Телефон матери"));
 prefill_uri.push("father_phone=" + record.getCellValueAsString("Телефон отца"));
 prefill_uri.push("friend_phone=" + record.getCellValueAsString("Телефон доверенного лица для экстренной связи "));
+
+if (record.getCellValueAsString("Официальная программа (from Предпочитаемая программа)") == "Mix") {
+    prefill_uri.push("program_text=" + await input.textAsync('Укажите содержание программы MIX'));
+    prefill_uri.push("study_text=" + await input.textAsync('Укажите содержание учебы MIX'));
+}
+
 prefill_uri = prefill_uri.map(encodeURI);
 
 // output.clear();
