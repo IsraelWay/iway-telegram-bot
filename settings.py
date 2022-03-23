@@ -49,6 +49,10 @@ class Settings:
     def upload_medblank_form() -> str:
         return "https://web.miniextensions.com/lSmisfMfnBBOfplBrjgv" if Settings.IS_TEST else "https://web.miniextensions.com/lSmisfMfnBBOfplBrjgv"
 
+    @staticmethod
+    def upload_tickets_form() -> str:
+        return "https://web.miniextensions.com/LeU0ZnqOM8OPiCWB9Oaf" if Settings.IS_TEST else "https://web.miniextensions.com/LeU0ZnqOM8OPiCWB9Oaf"
+
 
 
 if Settings.IS_TEST:

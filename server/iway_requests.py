@@ -72,3 +72,8 @@ class AirtableRequest:
             self.anketa_id = request_data['anketa_id']
         elif "anketa_id" in required_fields:
             raise Exception("No required param anketa_id")
+
+        if "avia_dates" in request_data:
+            self.avia_dates = request_data['avia_dates']
+        elif "avia_dates" in required_fields:
+            raise Exception("No required param avia_dates")

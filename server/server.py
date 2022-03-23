@@ -181,6 +181,29 @@ def medblank():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+@app.route("/avia-dates", methods=['POST'])
+@auth.login_required
+def avia_dates():
+    try:
+        air_request = AirtableRequest(request, ["avia_dates"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="avia-dates.html",
+        email_picture=air_request.email_picture,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=air_request.email_html,
+        avia_dates=air_request.avia_dates,
+        upload_tickets_url=Settings.upload_tickets_form(),
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/hook", methods=['POST'])
 def hook():
     pprint(request.files)
