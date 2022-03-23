@@ -62,3 +62,8 @@ class AirtableRequest:
             self.fill_agreement_url = request_data['fill_agreement_url']
         elif "fill_agreement_url" in required_fields:
             raise Exception("No required param fill_agreement_url")
+
+        if "preferred_dates" in request_data:
+            self.preferred_dates = request_data['preferred_dates']
+        elif "preferred_dates" in required_fields:
+            raise Exception("No required param preferred_dates")

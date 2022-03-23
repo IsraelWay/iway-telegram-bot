@@ -34,31 +34,20 @@ def verify_token(token):
 @app.route("/welcome", methods=['POST'])
 @auth.login_required
 def welcome():
-    email, full_name, id_record, preferred_dates, email_html = None, None, None, None, None
-    request_data = request.get_json()
-    if "email" in request_data:
-        email = request_data['email']
-    if "full_name" in request_data:
-        full_name = request_data['full_name']
-    if "id_record" in request_data:
-        id_record = request_data['id_record']
-    if "preferred_dates" in request_data:
-        preferred_dates = request_data['preferred_dates']
-    if "email_html" in request_data:
-        email_html = request_data['email_html']
-
-    if not email or not full_name:
-        return DetailedResponse(result=False, message="Email or full_name are not set",
-                                payload=[email, full_name]).__dict__
+    try:
+        air_request = AirtableRequest(request, ["preferred_dates"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
 
     mail_html = render_mail(template_name="welcome.html",
-                            full_name=full_name,
-                            id_record=id_record,
-                            email_html=email_html,
+                            full_name=air_request.full_name,
+                            id_record=air_request.id_record,
+                            email_html=air_request.email_html,
                             first_questions_link=Settings.first_questions_link(),
-                            preferred_dates=preferred_dates)
+                            preferred_dates=air_request.preferred_dates)
 
-    mail_service.send(to=email, name=full_name, content=mail_html)
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 

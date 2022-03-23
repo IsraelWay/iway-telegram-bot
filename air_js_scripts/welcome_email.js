@@ -44,7 +44,8 @@ let response = await fetch(host + '/welcome', {
       email_html: email_html,
       full_name: inputConfig.full_name,
       id_record: inputConfig.id_record,
-      preferred_dates: preferred_dates
+      preferred_dates: preferred_dates,
+      tg_id: inputConfig.tg_id,
   })
 })
 .catch( error => {
@@ -59,5 +60,10 @@ if (!data.result) {
     console.log(data);
     return;
 }
+
+let leads = base.getTable("Leads");
+await leads.updateRecordAsync(inputConfig.id_record, {
+    '(auto) дата отправки welcome email': new Date(),
+});
 
 console.log(`Done`);
