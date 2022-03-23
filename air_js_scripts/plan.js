@@ -75,7 +75,7 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) письмо план + запрос на данные': true,
+    '(auto) отправка плана + запроса данных': new Date(),
 });
 
 output.markdown(`### План (${record.getCellValueAsString('target')}) успешно отправлен`);
