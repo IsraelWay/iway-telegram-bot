@@ -117,7 +117,7 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) договор отправлен': true,
+    '(auto) договор отправлен': new Date(),
 });
 
 output.clear();
