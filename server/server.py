@@ -35,7 +35,7 @@ def verify_token(token):
 @auth.login_required
 def welcome():
     try:
-        air_request = AirtableRequest(request, ["preferred_dates"])
+        air_request = AirtableRequest(request, ["email_html", "preferred_dates"])
     except Exception as e:
         return DetailedResponse(result=False, message=str(e),
                                 payload=request.get_json()).__dict__
@@ -54,31 +54,20 @@ def welcome():
 @app.route("/anketa/masa", methods=['POST'])
 @auth.login_required
 def send_anketa():
-    email, full_name, id_record, id_form_record, email_html = None, None, None, None, None
-    request_data = request.get_json()
-    if "email" in request_data:
-        email = request_data['email']
-    if "full_name" in request_data:
-        full_name = request_data['full_name']
-    if "id_record" in request_data:
-        id_record = request_data['id_record']
-    if "id_form_record" in request_data:
-        id_form_record = request_data['id_form_record']
-    if "email_html" in request_data:
-        email_html = request_data['email_html']
 
-    if not email or not full_name:
-        return DetailedResponse(result=False, message="Email or full_name are not set",
-                                payload=[email, full_name]).__dict__
+    try:
+        air_request = AirtableRequest(request, ["email_html", "anketa_id"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
 
-    anketa_link = Settings.masa_form() + "/" + id_form_record
-
+    anketa_link = Settings.masa_form() + "/" + air_request.anketa_id
     mail_html = render_mail(template_name="anketa.html",
-                            full_name=full_name,
+                            full_name=air_request.full_name,
                             anketa_link=anketa_link,
-                            email_html=email_html,
-                            id_record=id_record)
-    mail_service.send(to=email, name=full_name, content=mail_html)
+                            email_html=air_request.email_html,
+                            id_record=air_request.id_record)
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
