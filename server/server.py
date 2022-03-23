@@ -74,7 +74,6 @@ def send_anketa():
 @app.route("/plan", methods=['POST'])
 @auth.login_required
 def send_plan():
-
     try:
         air_request = AirtableRequest(request, ["target", "email_html"])
     except Exception as e:

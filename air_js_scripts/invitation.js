@@ -56,7 +56,7 @@ let email_templates = await email_templates_base.selectRecordsAsync();
 let email_html = "";
 
 let postfix = "";
-if (city.getCellValueAsString("Страна") == "Украина") {
+if (["Украина"].includes(city.getCellValueAsString("Страна"))) {
     postfix += "-ua";
 }
 
@@ -114,7 +114,7 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) Приглашение отправлено': true,
+    '(auto) отправка приглашения': new Date(),
 });
 
 output.markdown(`### Приглашение и письмо с инструкциями успешно отправлены ${record.getCellValueAsString("Info")}`);

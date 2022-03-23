@@ -101,9 +101,9 @@ if (!data.result) {
     return;
 }
 
-// await leads.updateRecordAsync(record, {
-//     '(auto) Приглашение отправлено': true,
-// });
+await leads.updateRecordAsync(record, {
+    '(auto) справка отправлена (Украина)': new Date(),
+});
 
 output.clear();
 output.markdown(`### Справка успешно отправлена ${record.getCellValueAsString("Info")}`);
