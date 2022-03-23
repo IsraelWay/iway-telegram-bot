@@ -45,6 +45,10 @@ class Settings:
     def upload_agreement_form() -> str:
         return "https://web.miniextensions.com/vdYsbDSHBZGidRbb5aaA" if Settings.IS_TEST else "https://web.miniextensions.com/vdYsbDSHBZGidRbb5aaA"
 
+    @staticmethod
+    def upload_medblank_form() -> str:
+        return "https://web.miniextensions.com/lSmisfMfnBBOfplBrjgv" if Settings.IS_TEST else "https://web.miniextensions.com/lSmisfMfnBBOfplBrjgv"
+
 
 
 if Settings.IS_TEST:
