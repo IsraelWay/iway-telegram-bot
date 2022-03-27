@@ -2,6 +2,8 @@
 
 class AirtableRequest:
     def __init__(self, request, required_fields=None):
+        if required_fields is None:
+            required_fields = []
         request_data = request.get_json()
         if "email" in request_data:
             self.email = request_data['email']

@@ -17,7 +17,7 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка медбланка")
+output.markdown("Отправка запроса на документы для онварда")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
 

@@ -204,6 +204,28 @@ def avia_dates():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+@app.route("/living-request", methods=['POST'])
+@auth.login_required
+def living_request():
+    try:
+        air_request = AirtableRequest(request)
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="living.html",
+        email_picture=air_request.email_picture,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=air_request.email_html,
+        living_form_url=Settings.living_form(),
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/onward-check-results", methods=['POST'])
 @auth.login_required
 def onward_check_results():

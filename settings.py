@@ -57,6 +57,9 @@ class Settings:
     def onward_docs_form() -> str:
         return "https://web.miniextensions.com/mCByUtmBSVv0Im6oP7im" if Settings.IS_TEST else "https://web.miniextensions.com/mCByUtmBSVv0Im6oP7im"
 
+    @staticmethod
+    def living_form() -> str:
+        return "https://web.miniextensions.com/sOJUBmwhl5dYaz9U1Zri" if Settings.IS_TEST else "https://web.miniextensions.com/sOJUBmwhl5dYaz9U1Zri"
 
 
 if Settings.IS_TEST:
