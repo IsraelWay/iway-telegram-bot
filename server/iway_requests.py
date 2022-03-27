@@ -77,3 +77,13 @@ class AirtableRequest:
             self.avia_dates = request_data['avia_dates']
         elif "avia_dates" in required_fields:
             raise Exception("No required param avia_dates")
+
+        if "reasons" in request_data:
+            self.reasons = request_data['reasons']
+        elif "reasons" in required_fields:
+            raise Exception("No required param reasons")
+
+        if "is_passed" in request_data:
+            self.is_passed = request_data['is_passed']
+        elif "is_passed" in required_fields:
+            raise Exception("No required param is_passed")

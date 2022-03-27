@@ -204,6 +204,30 @@ def avia_dates():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+@app.route("/onward-check-results", methods=['POST'])
+@auth.login_required
+def onward_check_results():
+    try:
+        air_request = AirtableRequest(request, ["reasons", "is_passed"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="onward-check-results.html",
+        email_picture=air_request.email_picture,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        is_passed=air_request.is_passed,
+        email_html=air_request.email_html,
+        reasons=air_request.reasons,
+        onward_docs_url=Settings.onward_docs_form(),
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/onward-docs", methods=['POST'])
 @auth.login_required
 def onward_docs():
