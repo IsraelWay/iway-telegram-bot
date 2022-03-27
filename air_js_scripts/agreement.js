@@ -57,14 +57,12 @@ prefill_uri = prefill_uri.map(encodeURI);
 let email_templates_base = base.getTable("Шаблоны писем");
 let email_templates = await email_templates_base.selectRecordsAsync();
 let email_html = "";
-let email_picture = "https://static.tildacdn.com/tild3332-3830-4865-a434-396237623638/scott-graham-OQMZwNd.jpg";
+let email_picture = "";
 
 for (let template of email_templates.records) {
    if (template.getCellValueAsString("Название письма") == "agreement") {
        email_html = template.getCellValueAsString("Html");
-       if (template.getCellValue("picture")?.length > 0) {
-           email_picture = template.getCellValue("picture")[0].url;
-       }
+       email_picture = template.getCellValueAsString("picture_url");
        break;
    }
 }

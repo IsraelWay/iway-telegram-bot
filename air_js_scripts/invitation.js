@@ -27,6 +27,10 @@ if (!record) {
     output.markdown("Запись на найдена, напишите Илюше");
     return;
 }
+if (record.getCellValueAsString("target") != "masa") {
+    output.markdown("## Действие может быть только для программ Маса, сообщие Илье, что было это сообщение (лучше сделать скриншот)");
+    return;
+}
 if (!record.getCellValue("Первичное интервью")) {
     output.markdown("Первичное интервью не пройдено");
     return;
