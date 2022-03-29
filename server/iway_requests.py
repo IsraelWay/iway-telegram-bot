@@ -1,30 +1,35 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 
 class AirtableRequest:
-    def __init__(self, request, required_fields=None):
+    def __init__(self, request, required_fields=None, exclude_fields=None):
         if required_fields is None:
             required_fields = []
+        if exclude_fields is None:
+            exclude_fields = []
         request_data = request.get_json()
+
+        # required
         if "email" in request_data:
             self.email = request_data['email']
-        else:
+        elif "email" not in exclude_fields:
             raise Exception("No required param email")
 
         if "full_name" in request_data:
             self.full_name = request_data['full_name']
-        else:
+        elif "full_name" not in exclude_fields:
             raise Exception("No required param full_name")
 
         if "id_record" in request_data:
             self.id_record = request_data['id_record']
-        else:
+        elif "id_record" not in exclude_fields:
             raise Exception("No required param id_record")
 
         if "tg_id" in request_data:
             self.tg_id = request_data['tg_id']
-        else:
+        elif "tg_id" not in exclude_fields:
             raise Exception("No required param tg_id")
 
+        # not required
         if "email_html" in request_data:
             self.email_html = request_data['email_html']
         elif "email_html" in required_fields:
@@ -34,6 +39,11 @@ class AirtableRequest:
             self.invitation_url = request_data['invitation_url']
         elif "invitation_url" in required_fields:
             raise Exception("No required param invitation_url")
+
+        if "support_action" in request_data:
+            self.support_action = request_data['support_action']
+        elif "support_action" in required_fields:
+            raise Exception("No required param support_action")
 
         if "target" in request_data:
             self.target = request_data['target']

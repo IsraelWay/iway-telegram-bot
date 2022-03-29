@@ -42,32 +42,59 @@
 
             {% block content %} {% endblock %}
 
-
+            {% if id_record %}
             <table id="rec426960945" style="width:100%; border-collapse:collapse; border-spacing:0; margin:0; border:0;"
                    cellpadding="0" cellspacing="0" data-record-type="645">
                 <tr>
                     <td style="padding-left:15px; padding-right:15px; ">
                         <table id="recin426960945" class="r" style="margin: 0 auto;border-spacing: 0;width:600px;"
                                align="center">
+
                             <tr>
                                 <td style="padding-top:60px;padding-bottom:60px;padding-left:30px;padding-right:30px;">
                                     <table border="0" cellpadding="0" cellspacing="0" width="100%"
                                            style="margin: 0 auto;table-layout: fixed;">
                                         <tr>
-                                            <td><a href="http://tilda.cc/"> <img width="200"
+                                            <td><a href="https://israelway.ru/"> <img width="200"
                                                                                  style="display: block; width: 200px; margin: 0 auto;"
                                                                                  src="https://static.tildacdn.com/tild3164-3638-4333-b261-646632653332/Logo_IsraelWay_MasaP.png">
                                             </a></td>
                                         </tr>
                                         <tr>
                                             <td style="text-align: center; padding: 15px 0 0;"><a
-                                                    href="http://tilda.cc/"
+                                                    href="https://israelway.ru"
                                                     style="text-decoration: none; color: #222222;">
                                                 <div style="margin: 0 auto; font-weight: normal; font-family: Helvetica Neue, Helvetica, Arial, sans-serif; color:#222222;font-size:26px;line-height:1.3; padding:0;">
                                                     Мы всегда рядом
                                                 </div>
                                             </a></td>
                                         </tr>
+                                        {% if not support_action %}
+                                         <tr>
+                                            <td style="padding: 12px 0 40px 0">
+                                                <table border="0" cellpadding="0" cellspacing="0"
+                                                       style="margin: 0 auto;" align="center">
+                                                    <tr>
+                                                        <td> <!--[if mso]>
+                                                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"
+                                                                         xmlns:w="urn:schemas-microsoft-com:office:word"
+                                                                         href="https://web.miniextensions.com/l5FVEWu0yjIkgQu2oj6V?prefill_Lead={{ id_record }}&prefill_ФИО={{ full_name }}"
+                                                                         style="height:24px;v-text-anchor:middle;mso-wrap-style:none;mso-position-horizontal:center;"
+                                                                         arcsize="15%" stroke="f" fillcolor="#57b3f0">
+                                                                <w:anchorlock/>
+                                                                <center style="text-decoration: none; padding: 12px 24px; font-size: 14px; text-align: center; font-weight: bold; font-family:Helvetica Neue, Helvetica, Arial, sans-serif; width: 100%;color:#ffffff;">
+                                                                    Задать вопрос
+                                                                </center>
+                                                            </v:roundrect> <![endif]--> <!--[if !mso]--> <a
+                                                                    style="display: table-cell; text-decoration: none; padding: 12px 24px; font-size: 14px; text-align: center; font-weight: bold; font-family:Helvetica Neue, Helvetica, Arial, sans-serif; width: 100%;color:#ffffff; border:0px solid ; background-color:#57b3f0; border-radius: 5px;"
+                                                                    href="https://web.miniextensions.com/l5FVEWu0yjIkgQu2oj6V?prefill_Lead={{ id_record }}&prefill_ФИО={{ full_name }}"> Задать вопрос </a>
+                                                            <!--[endif]-->
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
                                         <tr>
                                             <td style="text-align: center; padding: 16px 0 2px;">
                                                 <div style="margin: 0 auto; font-weight: normal; font-family: Helvetica Neue, Helvetica, Arial, sans-serif; color:#777777;font-size:15px;line-height:1.4; padding:0;">
@@ -103,10 +130,12 @@
                                     </table>
                                 </td>
                             </tr>
+
                         </table>
                     </td>
                 </tr>
             </table>
+            {% endif %}
             <table id="rec419450077" style="width:100%; border-collapse:collapse; border-spacing:0; margin:0; border:0;"
                    cellpadding="0" cellspacing="0" data-record-type="627">
                 <tr>
@@ -123,6 +152,7 @@
                                                 </div>
                                             </td>
                                         </tr>
+                                        {% if id_record %}
                                         <tr>
                                             <td style="text-align: center; padding-top: 25px;">
                                                 <div style="margin: 0 auto; font-weight: normal; font-family: Helvetica Neue, Helvetica, Arial, sans-serif; color:#a1a1a1;font-size:12px;">
@@ -133,6 +163,7 @@
                                                 </div>
                                             </td>
                                         </tr>
+                                        {% endif %}
                                     </table>
                                 </td>
                             </tr>

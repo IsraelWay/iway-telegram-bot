@@ -57,6 +57,26 @@ for (let template of email_templates.records) {
    }
 }
 
+output.clear();
+output.markdown(`## Отправка анкеты маса для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+if (record.getCellValueAsString("(auto) отправка анкеты маса")) {
+    output.markdown("### Письмо с анкетой уже ранее отправляли " + record.getCellValueAsString("(auto) отправка анкеты маса"));
+}
+
+
+let shouldContinue = await input.buttonsAsync(
+    'Отправляем?',
+    [
+        {label: 'Отмена', value: 'cancel', variant: 'danger'},
+        {label: 'Да, вперед, отправить анкету', value: 'yes', variant: 'primary'},
+    ],
+);
+if (shouldContinue === 'cancel') {
+    output.clear();
+    output.text('Отменено');
+    return;
+}
+
 let response = await fetch(host + '/anketa/masa', {
   method: 'POST',
   headers: {

@@ -1,5 +1,6 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 import threading
+import markdown
 from pprint import pprint
 
 from time import sleep
@@ -220,6 +221,30 @@ def living_request():
         id_record=air_request.id_record,
         email_html=air_request.email_html,
         living_form_url=Settings.living_form(),
+    )
+
+    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
+@app.route("/support-action", methods=['POST'])
+@auth.login_required
+def support_action():
+    try:
+        air_request = AirtableRequest(request, ["support_action"], ["id_record"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    pprint(request.get_json())
+
+    mail_html = render_mail(
+        template_name="support-action.html",
+        support_action=air_request.support_action,
+        email_picture=air_request.email_picture,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=markdown.markdown(air_request.email_html),
     )
 
     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
