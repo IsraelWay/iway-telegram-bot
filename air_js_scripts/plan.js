@@ -45,6 +45,22 @@ for (let template of email_templates.records) {
    }
 }
 
+output.clear();
+output.markdown(`## Отправка плана действий для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+
+let shouldContinue = await input.buttonsAsync(
+    'Отправляем?',
+    [
+        {label: 'Отмена', value: 'cancel', variant: 'danger'},
+        {label: 'Да, вперед, отправить план', value: 'yes', variant: 'primary'},
+    ],
+);
+if (shouldContinue === 'cancel') {
+    output.clear();
+    output.text('Отменено');
+    return;
+}
+
 // запрос
 let response = await fetch(host + '/plan', {
   method: 'POST',

@@ -236,8 +236,6 @@ def support_action():
         return DetailedResponse(result=False, message=str(e),
                                 payload=request.get_json()).__dict__
 
-    pprint(request.get_json())
-
     mail_html = render_mail(
         template_name="support-action.html",
         support_action=air_request.support_action,
