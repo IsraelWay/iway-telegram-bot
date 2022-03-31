@@ -17,13 +17,13 @@ def send(to, name, content, subject, _tags=None, sender=None):
     html_content = content
     sender = {"name": "IsraelWay Team", "email": "team@israelway.ru"}
     to = [{"email": to, "name": name}]
-    cc = [{"email": "ilyapolo@yandex.ru", "name": "Ilya Polotsky (yandex)"}]
+    bcc = [{"email": "mail-logs@israelway.ru", "name": "mail-logs"}]
     # bcc = [{"name": "John Doe", "email": "example@example.com"}]
     # reply_to = {"email": "replyto@domain.com", "name": "John Doe"}
     # headers = {"Some-Custom-Name": "unique-id-1234"}
     # params = {"parameter": "My param value", "subject": "New Subject"}
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=html_content, sender=sender, subject=subject,
-                                                   tags=_tags)
+                                                   tags=_tags, bcc=bcc)
     try:
         api_response = api_instance.send_transac_email(send_smtp_email)
         pprint(api_response)

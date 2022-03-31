@@ -1,6 +1,8 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 import threading
 import markdown
+import logging
+
 from pprint import pprint
 
 from time import sleep
@@ -37,6 +39,7 @@ def verify_token(token):
 def welcome():
     try:
         air_request = AirtableRequest(request, ["email_html", "preferred_dates"])
+        logging.getLogger('root').info("Welcome email to " + air_request.email)
     except Exception as e:
         return DetailedResponse(result=False, message=str(e),
                                 payload=request.get_json()).__dict__
@@ -58,6 +61,8 @@ def send_anketa():
 
     try:
         air_request = AirtableRequest(request, ["email_html", "anketa_id"])
+        logging.getLogger('root').info("Anketa to " + air_request.email)
+
     except Exception as e:
         return DetailedResponse(result=False, message=str(e),
                                 payload=request.get_json()).__dict__

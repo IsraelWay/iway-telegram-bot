@@ -1,4 +1,5 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
+import logging
 
 class AirtableRequest:
     def __init__(self, request, required_fields=None, exclude_fields=None):
