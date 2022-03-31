@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - "./iway-crm.log:/opt/iway-crm.log"
     ports:
       - "5000:5000"
     env_file:
