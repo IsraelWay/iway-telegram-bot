@@ -41,6 +41,10 @@ prefill_uri.push("address=" + record.getCellValueAsString("Страна (from Г
 prefill_uri.push("mother_phone=" + record.getCellValueAsString("Телефон матери"));
 prefill_uri.push("father_phone=" + record.getCellValueAsString("Телефон отца"));
 prefill_uri.push("email=" + record.getCellValueAsString("Email"));
+prefill_uri.push("dates=" +
+        new Date(record.getCellValueAsString("Start date (from Предпочитаемая программа)")).toLocaleDateString("ru-RU")
+         + " до " +
+         new Date(record.getCellValueAsString("End date (from Предпочитаемая программа)")).toLocaleDateString("ru-RU"));
 prefill_uri.push("friend_phone=" + record.getCellValueAsString("Имя и телефон доверенного лица для экстренной связи"));
 
 if (record.getCellValueAsString("Официальная программа (from Предпочитаемая программа)") == "Mix") {

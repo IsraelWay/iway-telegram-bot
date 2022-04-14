@@ -32,16 +32,6 @@ if (record.getCellValueAsString("(check) Медбланк") != "Подписан
     return;
 }
 
-if (!record.getCellValue("Программа внесенная сумма")) {
-    output.markdown("## Не оплачена программа");
-    return;
-}
-
-if (!record.getCellValue("Залог внесенная сумма")) {
-    output.markdown("## Не оплачен залог");
-    return;
-}
-
 output.markdown(`## Перевести ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")}, ${record.getCellValueAsString("Страна (from Город)")} в статус * Participant (Участник) * ?`)
 
 let shouldContinue = await input.buttonsAsync(
