@@ -33,7 +33,13 @@ if (record.getCellValue("Текст договора")?.length == null) {
     return;
 }
 
-let fill_agreement_url = record.getCellValueAsString("Договор форма (from Официальная программа)")
+if (!record.getCellValue("Start date (from Предпочитаемая программа)")
+        || !record.getCellValue("End date (from Предпочитаемая программа)")) {
+    output.markdown("Не заданы даты программы");
+    return;
+}
+
+let fill_agreement_url = record.getCellValueAsString("Договор форма (from Официальная программа)");
 let prefill_uri = [];
 prefill_uri.push("fio=" + record.getCellValueAsString("Имя") + " " + record.getCellValueAsString("Фамилия"));
 prefill_uri.push("passport=" + record.getCellValueAsString("Номер загран. паспорта"));
@@ -41,10 +47,18 @@ prefill_uri.push("address=" + record.getCellValueAsString("Страна (from Г
 prefill_uri.push("mother_phone=" + record.getCellValueAsString("Телефон матери"));
 prefill_uri.push("father_phone=" + record.getCellValueAsString("Телефон отца"));
 prefill_uri.push("email=" + record.getCellValueAsString("Email"));
+// prefill_uri.push("dates=" +
+//         record.getCellValueAsString("Start date (from Предпочитаемая программа)")
+ //         + " до " +
+ //         new Date(record.getCellValue("End date (from Предпочитаемая программа)")).toLocaleDateString("en-EN"));
 prefill_uri.push("dates=" +
-        new Date(record.getCellValueAsString("Start date (from Предпочитаемая программа)")).toLocaleDateString("ru-RU")
+        new Date(record.getCellValue("Start date (from Предпочитаемая программа)"))
+        .toLocaleString("ru-RU", { year: 'numeric', month: 'numeric', day: 'numeric'})
          + " до " +
-         new Date(record.getCellValueAsString("End date (from Предпочитаемая программа)")).toLocaleDateString("ru-RU"));
+         new Date(record.getCellValue("End date (from Предпочитаемая программа)"))
+         .toLocaleString("ru-RU", { year: 'numeric', month: 'numeric', day: 'numeric'}));
+
+
 prefill_uri.push("friend_phone=" + record.getCellValueAsString("Имя и телефон доверенного лица для экстренной связи"));
 
 if (record.getCellValueAsString("Официальная программа (from Предпочитаемая программа)") == "Mix") {
@@ -52,9 +66,11 @@ if (record.getCellValueAsString("Официальная программа (from
     prefill_uri.push("study_text=" + await input.textAsync('Укажите содержание учебы MIX'));
 }
 
+let prefill_uri_print = prefill_uri;
 prefill_uri = prefill_uri.map(encodeURI);
 
 // output.clear();
+// output.inspect(prefill_uri);
 // output.markdown(fill_agreement_url + "?" + prefill_uri.join("&"));
 // return;
 
@@ -124,4 +140,5 @@ await leads.updateRecordAsync(record, {
 });
 
 output.clear();
+output.inspect(prefill_uri_print);
 output.markdown(`### Договор успешно отправлен на подпись ${record.getCellValueAsString("Info")}`);
