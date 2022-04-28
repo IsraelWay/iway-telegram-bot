@@ -1,4 +1,5 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
+import json
 import threading
 import markdown
 import logging
@@ -26,6 +27,25 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 auth = HTTPTokenAuth(scheme='Bearer')
 print("Server is running")
+
+@app.before_request
+def before_request_func():
+    updater = get_updater()
+    c.acquire()
+    req_data = {}
+    req_data['endpoint'] = request.endpoint
+    req_data['method'] = request.method
+    req_data['cookies'] = request.cookies
+    req_data['data'] = request.data.decode("utf-8")
+    req_data['headers'] = dict(request.headers)
+    req_data['headers'].pop('Cookie', None)
+    req_data['args'] = request.args
+    req_data['form'] = request.form
+    req_data['remote_addr'] = request.remote_addr
+    logging.getLogger('root').info("/ request " + json.dumps(req_data, indent=4))
+    updater.bot.send_message(75771603, "Запрос на server. " + json.dumps(req_data, indent=4))
+    c.notify_all()
+    c.release()
 
 
 @auth.verify_token
@@ -312,11 +332,6 @@ def hook():
 
 @app.route('/')
 def hello():
-    updater = get_updater()
-    c.acquire()
-    updater.bot.send_message(75771603, "Запрос на /")
-    c.notify_all()
-    c.release()
     return 'Welcome to IsraelWay API 1.0'
 
 

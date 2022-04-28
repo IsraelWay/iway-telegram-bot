@@ -8,7 +8,7 @@ from mail.mail_service import render_mail
 
 def show_state_text(update: Update, context: CallbackContext):
     update.message.reply_html(
-        f"Привет! Это бот IsraelWay. Переходи на сайт https://israelway.ru, чтобы познакомиться.",
+        f"Привет! Это бот IsraelWay. Переходи на сайт https://israelway.ru, чтобы зарегистрироваться",
         disable_web_page_preview=True)
     return None
 
