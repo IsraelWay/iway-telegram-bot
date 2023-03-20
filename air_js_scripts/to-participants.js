@@ -32,7 +32,9 @@ if (record.getCellValueAsString("(check) Медбланк") != "Подписан
     return;
 }
 
-output.markdown(`## Перевести ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")}, ${record.getCellValueAsString("Страна (from Город)")} в статус * Participant (Участник) * ?`)
+output.markdown(`## Перевести ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")}, ${record.getCellValueAsString("Страна (from Город)")}
+ программа ${record.getCellValueAsString("Предпочитаемая программа")} 
+ в статус * Participant (Участник) * ?`)
 
 let shouldContinue = await input.buttonsAsync(
     'Переводим?',
@@ -73,6 +75,10 @@ try {
         "Имя участника": toName(record.getCellValueAsString("Имя как в загранпаспорте")) + ' ' + toName(record.getCellValueAsString("Фамилия как в загранпаспорте")),
         "Паспорт номер": record.getCellValueAsString("Номер загран. паспорта"),
         "Статус": {name: "Активный"},
+        "Грант": record.getCellValue("Грант"),
+        "Доп грант": record.getCellValue("Доп грант"),
+        "Личное участие": record.getCellValue("Личное участие"),
+        "Залог внесенная сумма": record.getCellValue("Залог внесенная сумма")
     })
 }
 catch (e) {
