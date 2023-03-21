@@ -50,6 +50,10 @@ class Settings:
         return "https://web.miniextensions.com/lSmisfMfnBBOfplBrjgv" if Settings.IS_TEST else "https://web.miniextensions.com/lSmisfMfnBBOfplBrjgv"
 
     @staticmethod
+    def upload_payment_form() -> str:
+        return "https://web.miniextensions.com/6QtBryI3eBFdSa89y7Z8" if Settings.IS_TEST else "https://web.miniextensions.com/6QtBryI3eBFdSa89y7Z8"
+
+    @staticmethod
     def upload_tickets_form() -> str:
         return "https://web.miniextensions.com/LeU0ZnqOM8OPiCWB9Oaf" if Settings.IS_TEST else "https://web.miniextensions.com/LeU0ZnqOM8OPiCWB9Oaf"
 
