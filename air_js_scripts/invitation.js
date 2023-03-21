@@ -44,6 +44,11 @@ if (!record.getCellValue("Приглашение") || record.getCellValue("Пр�
     return;
 }
 
+if (!record.getCellValue("Город")) {
+    output.markdown("Укажите город");
+    return;
+}
+
 // инфо по консульству
 let city = await base.getTable("Города").selectRecordAsync(record.getCellValue("Город")[0].id);
 if (!city) {
@@ -99,7 +104,7 @@ let response = await fetch(host + '/invitation-letter', {
       full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
       consul_info: consul_info,
-      invitation_url: record.getCellValue("Приглашение")[0].url,
+      invitation_url: record.getCellValueAsString("Ссылка на просмотр приглашения"),
       id_record: record.id,
       tg_id: record.getCellValueAsString("tg_id")
   })
