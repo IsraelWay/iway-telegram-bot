@@ -35,6 +35,7 @@ def main() -> None:
     dispatcher.add_handler(MessageHandler(Filters.text, show_state_text))
     dispatcher.add_error_handler(error_handler)
     updater.start_polling()
+    updater.bot.send_message(75771603, "Bot started")
     print("Bot is running")
     logging.getLogger('root').info("Bot is running")
     updater.idle()
