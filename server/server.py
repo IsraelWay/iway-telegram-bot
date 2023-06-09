@@ -25,7 +25,7 @@ app = Flask("Flask")
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-auth = HTTPTokenAuth(scheme='Bearer')
+auth = HTTPTokenAuth(scheme='Bearer', header='Authorization')
 print("Server is running")
 
 @app.before_request
@@ -51,8 +51,8 @@ def before_request_func():
 
 @auth.verify_token
 def verify_token(token):
-    if token == Settings.auth_token():
-        return True
+    schema, token = request.headers['Authorization'].split(None, 1)
+    return bool(token == Settings.auth_token())
 
 
 @app.route("/welcome", methods=['POST'])

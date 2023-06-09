@@ -2,6 +2,7 @@ version: "3"
 services:
   crm:
     image: ipolotsky/israelway-crm
+    platform: linux/amd64
     labels:
       autoheal: true
     build:
