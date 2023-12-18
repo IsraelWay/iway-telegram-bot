@@ -100,3 +100,8 @@ class AirtableRequest:
             self.is_passed = request_data['is_passed']
         elif "is_passed" in required_fields:
             raise Exception("No required param is_passed")
+
+        if "anketa_zalog_url" in request_data:
+            self.anketa_zalog_url = request_data['anketa_zalog_url']
+        elif "anketa_zalog_url" in required_fields:
+            raise Exception("No required param anketa_zalog_url")
