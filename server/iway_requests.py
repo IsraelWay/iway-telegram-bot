@@ -1,6 +1,7 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 import logging
 
+
 class AirtableRequest:
     def __init__(self, request, required_fields=None, exclude_fields=None):
         if required_fields is None:
@@ -31,10 +32,45 @@ class AirtableRequest:
             raise Exception("No required param tg_id")
 
         # not required
+
+        # needed for common ===============================
         if "email_html" in request_data:
             self.email_html = request_data['email_html']
         elif "email_html" in required_fields:
             raise Exception("No required param email_html")
+
+        try:
+            self.email_picture = request_data["email_picture"]
+        except:
+            self.email_picture = "https://thumb.tildacdn.com/tild3033-6631-4636-b931-313031666332/-/format/webp/Screenshot_2023-12-2.png"
+
+        # if "email_picture" in request_data:
+        #     self.email_picture = request_data['email_picture']
+        # elif "email_picture" in required_fields:
+        #     raise Exception("No required param email_picture")
+
+        if "actions" in request_data:
+            self.actions = request_data['actions']
+        elif "actions" in required_fields:
+            raise Exception("No required param actions")
+
+        if "main_title" in request_data:
+            self.main_title = request_data['main_title']
+        elif "main_title" in required_fields:
+            raise Exception("No required param main_title")
+
+        if "subject" in request_data:
+            self.subject = request_data['subject']
+        elif "subject" in required_fields:
+            raise Exception("No required param subject")
+
+        if "cc" in request_data:
+            self.cc = request_data['cc']
+        elif "cc" in required_fields:
+            raise Exception("No required param cc")
+        else:
+            self.cc = request_data.get('cc')
+        # ===================================================
 
         if "invitation_url" in request_data:
             self.invitation_url = request_data['invitation_url']
@@ -65,11 +101,6 @@ class AirtableRequest:
             self.agreement_text_url = request_data['agreement_text_url']
         elif "agreement_text_url" in required_fields:
             raise Exception("No required param agreement_text_url")
-
-        if "email_picture" in request_data:
-            self.email_picture = request_data['email_picture']
-        elif "email_picture" in required_fields:
-            raise Exception("No required param email_picture")
 
         if "fill_agreement_url" in request_data:
             self.fill_agreement_url = request_data['fill_agreement_url']
