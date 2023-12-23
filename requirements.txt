@@ -9,3 +9,4 @@ flask==2.0.2
 flask_httpauth==4.5.0
 flask_cors==3.0.10
 markdown==3.3.6
+Werkzeug==2.2.2
