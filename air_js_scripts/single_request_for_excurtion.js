@@ -18,9 +18,9 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Подтверждение автозаявки")
-let autoRequests = base.getTable("Заявки на автоэкскурсии");
-let record = await input.recordAsync('',autoRequests).catch()
+output.markdown("Подтверждение однодневной заявки")
+let singleRequests = base.getTable("Заявки однодневные");
+let record = await input.recordAsync('',singleRequests).catch()
 
 output.clear();
 
@@ -38,26 +38,16 @@ let data4Table = [
         "value": record.getCellValueAsString("Название экскурсии")
     },
     {
-        "name": "Дата и время:",
+        "name": "Дата:",
         "value": record.getCellValueAsString("Дата начала")
     },
     {
-        "name": "Время заказа машины:",
-        "value": record.getCellValueAsString("Время заказа машины")
+        "name": "Участник:",
+        "value": record.getCellValueAsString("Участник")
     },
     {
-        "name": "Водитель:",
-        "value": record.getCellValueAsString("Водитель")
-    },
-    {
-        "name": "Промокоды (водитель + пассажиры):",
-        "value": [
-            "1: " + record.getCellValueAsString("Промокод водителя"),
-            "2: " + record.getCellValueAsString("Промокод пассажир 1"),
-            "3: " + record.getCellValueAsString("Промокод пассажир 2"),
-            "4: " + record.getCellValueAsString("Промокод пассажир 3"),
-            "5: " + record.getCellValueAsString("Промокод пассажир 4")
-        ].join("<br/>")
+        "name": "Промокод:",
+        "value": record.getCellValueAsString("Промокод из Pinsteps")
     },
     {
         "name": "Дополнительная информация:",
@@ -78,10 +68,10 @@ tableMarkup = '<table cellspacing="2" cellpadding="10" border="0" style="border-
 
 
 output.clear();
-output.markdown(`## Отправка подтверждения автоэкскурсии на ${record.getCellValueAsString("Email")}`);
+output.markdown(`## Отправка подтверждения однодневной экскурсии на ${record.getCellValueAsString("Email")}`);
 output.markdown(`### Письмо будет содержать:`);
-output.markdown(record.getCellValueAsString("Email html") + tableMarkup);
-output.markdown(`### И кнопку: Данные о заявке тут с ссылкой ` + record.getCellValueAsString("Ссылка для просмотра"));
+output.text(record.getCellValueAsString("Email html") + tableMarkup);
+output.markdown(`### И кнопку: "Данные о заявке тут" с ссылкой ` + record.getCellValueAsString("Просмотр заявки"));
 
 let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
@@ -98,16 +88,16 @@ if (shouldContinue === 'cancel') {
 
 let actions = {
           "subbottom" : {
-            "link": record.getCellValueAsString("Ссылка для просмотра"),
+            "link": record.getCellValueAsString("Просмотр заявки"),
             "text": "Данные о заявке тут"
         },
       };
 
-let vaucherAttachment = record.getCellValue("Ваучеры (аренда машины + входы)");
+let vaucherAttachment = record.getCellValue("ваучер (CКАЧАТЬ И РАСПЕЧАТАТЬ)");
 if (vaucherAttachment) {
     actions.bottom = {
-        "link": record.getCellValueAsString("Скачать ваучеры"),
-        "text": "Скачать ваучеры (аренда машины + входы)"
+        "link": record.getCellValueAsString("Ваучеры (скачать)"),
+        "text": "Скачать ваучеры"
     }
 }
 
@@ -124,8 +114,8 @@ let response = await fetch(host + '/send-email', {
       email_html: record.getCellValueAsString("Email html") + tableMarkup,
       email_picture: "https://static.tildacdn.com/tild3036-3731-4331-b837-613537663963/Screenshot_2023-12-2.png",
       actions: actions,
-      main_title: "Подтверждение заявки на автоэкскурсию",
-      subject: "IsraelWay team - подтверждение заявки на автоэкскурсию",
+      main_title: "Подтверждение заявки на однодневную экскурсию",
+      subject: "IsraelWay team - подтверждение заявки на однодневную экскурсию",
       id_record: record.id,
       cc: cc,
       tg_id: ""//record.getCellValueAsString("tg_id")
@@ -144,9 +134,9 @@ if (!data.result) {
     return;
 }
 
-await autoRequests.updateRecordAsync(record, {
+await singleRequests.updateRecordAsync(record, {
     '(auto) дата отправки подтверждения': new Date(),
 });
 
 output.clear();
-output.markdown(`### Подтверждение заявки на автоэкскурсию отправлено успешно`);
+output.markdown(`### Подтверждение заявки на однодневную экскурсию отправлено успешно`);
