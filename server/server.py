@@ -28,6 +28,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 auth = HTTPTokenAuth(scheme='Bearer', header='Authorization')
 print("Server is running")
 
+
 @app.before_request
 def before_request_func():
     updater = get_updater()
@@ -79,7 +80,6 @@ def welcome():
 @app.route("/anketa/masa", methods=['POST'])
 @auth.login_required
 def send_anketa():
-
     try:
         air_request = AirtableRequest(request, ["email_html", "anketa_id"])
         logging.getLogger('root').info("Anketa to " + air_request.email)
@@ -361,6 +361,32 @@ def onward_docs():
     )
 
     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
+@app.route("/send-email", methods=['POST'])
+@auth.login_required
+def send_email():
+    try:
+        air_request = AirtableRequest(request, ["email_html", "email_picture", "actions", "main_title", "subject"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="common.html",
+        email_html=air_request.email_html,
+        email_picture=air_request.email_picture,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        actions=air_request.actions,
+        main_title=air_request.main_title
+    )
+
+    mail_service.send(to=air_request.email, cc=air_request.cc if air_request.cc else None,
+                      subject=air_request.subject if air_request.subject else "IsraelWay team",
+                      name=air_request.full_name, content=mail_html)
+
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
