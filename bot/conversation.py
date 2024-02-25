@@ -75,8 +75,10 @@ def action_to_check_rights_step_1(update: Update, context: CallbackContext):
         f"(Ваши или вашего супруга или супруги бабушка или дедушка со стороны матери или со стороны отца - евреи)",
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(text=str(CALLBACK_BUTTON_YES), callback_data=f"{CALLBACK_BUTTON_YES}")],
-            [InlineKeyboardButton(text=str(CALLBACK_BUTTON_NO), callback_data=f"{CALLBACK_BUTTON_NO}")],
+            [
+                InlineKeyboardButton(text=str(CALLBACK_BUTTON_YES), callback_data=f"{CALLBACK_BUTTON_YES}"),
+                InlineKeyboardButton(text=str(CALLBACK_BUTTON_NO), callback_data=f"{CALLBACK_BUTTON_NO}")
+            ],
             [InlineKeyboardButton(text=str(CALLBACK_BUTTON_DONT_KNOW), callback_data=f"{CALLBACK_BUTTON_DONT_KNOW}")],
         ]))
 
@@ -92,16 +94,58 @@ def action_check_age(update: Update, context: CallbackContext):
         )
         return None
 
-    first_number = first_number_match.group(0)
-
-
+    first_number = int(first_number_match.group(0))
     update.message.reply_html(
-        f"Your age is {first_number}",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
-                                  callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
-        ]),
+        f"Вы указали возраст: {first_number}",
     )
+
+    if first_number < 17 or first_number > 40:
+        update.message.reply_html(
+            f"К сожалению, вы не можете претендовать на участие в программах Маса и Онвард, "
+            f"однако вы можете проверить варианты сотрудничества с нами и переход к переписке с координатором",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+                [InlineKeyboardButton(text='Обратиться к координатору', url='https://t.me/israelway_IW')]
+            ])
+        )
+
+    if first_number in range(17, 31):
+        update.message.reply_html(
+            f"Поздравляем, вы можете подавать вашу кандидатуру на участие в программах <a href='https://israelway.ru/masa/all-programs/'>МАСА</a> длительностью до шести месяцев, "
+            f"на программу <a href='https://israelway.ru/onward-campus'>Онвард Кампус</a> длительностью до месяца "
+            f"и на программу <a href='https://israelway.ru/onward-volunteering'>Онвард волонтёр</a> длительностью до двух недель.",
+
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text='МАСА 6 месяцев', url='https://israelway.ru/masa/all-programs/')],
+                [InlineKeyboardButton(text='Онвард Кампус', url='https://israelway.ru/onward-campus')],
+                [InlineKeyboardButton(text='Онвард волонтёр', url='https://israelway.ru/onward-volunteering')],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
+                                      callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+            ])
+        )
+
+    if first_number in range(31, 35):
+        update.message.reply_html(
+            f"Поздравляем, вы можете подавать вашу кандидатуру на участие в программах <a href='https://israelway.ru/masa/all-programs/'>МАСА</a> длительностью до шести месяцев "
+            f"и на программу <a href='https://israelway.ru/onward-volunteering'>Онвард волонтёр</a> длительностью до двух недель.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text='МАСА 6 месяцев', url='https://israelway.ru/masa/all-programs/')],
+                [InlineKeyboardButton(text='Онвард волонтёр', url='https://israelway.ru/onward-volunteering')],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
+                                      callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+            ])
+        )
+
+    if first_number in range(35, 41):
+        update.message.reply_html(
+            f"Поздравляем, вы можете подавать вашу кандидатуру на участие в "
+            f"программе <a href='https://israelway.ru/onward-volunteering'>Онвард волонтёр</a> длительностью до двух недель",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text='Онвард волонтёр', url='https://israelway.ru/onward-volunteering')],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
+                                      callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+            ])
+        )
 
     return None
 
