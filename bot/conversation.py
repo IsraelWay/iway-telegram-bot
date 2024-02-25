@@ -28,6 +28,7 @@ CALLBACK_BUTTON_YES = "Да"
 CALLBACK_BUTTON_CHECK_NEW_AGE = "Другой возраст"
 CALLBACK_BUTTON_NO = "Нет"
 CALLBACK_BUTTON_DONT_KNOW = "Не знаю"
+CALLBACK_BUTTON_CHECK_RIGHTS = "Проверить право"
 BUTTON_CHECK_RIGHTS = "Проверить право"
 BUTTON_START_AGAIN = "Начать заново"
 BUTTON_BACK = "В начало"
@@ -42,7 +43,7 @@ def action_to_base(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=update.effective_user.id,
-        text=f"Привет! Это бот IsraelWay!",
+        text=f"👋",
         disable_web_page_preview=True,
         reply_markup=ReplyKeyboardMarkup(
             [[str(BUTTON_CHECK_RIGHTS), str(BUTTON_BACK)]],
@@ -59,7 +60,10 @@ def action_to_base(update: Update, context: CallbackContext):
         f"Если хотите узнать что-то более подробно, то пишите вот сюда @israelway_IW",
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(text='Обратиться к координатору', url='https://t.me/israelway_IW')]
+            [InlineKeyboardButton(text='Обратиться к координатору', url='https://t.me/israelway_IW')],
+            [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_RIGHTS),
+                                  callback_data=f"{CALLBACK_BUTTON_CHECK_RIGHTS}")],
+            [InlineKeyboardButton(text='Перейти на сайт', url='https://israelway.ru')]
         ])
     )
 
@@ -67,7 +71,8 @@ def action_to_base(update: Update, context: CallbackContext):
 
 
 def action_to_check_rights_step_1(update: Update, context: CallbackContext):
-    update.message.reply_html(
+    context.bot.send_message(
+        update.effective_user.id,
         f"Ответы на два вопроса помогут вам понять, "
         f"подходите ли вы для участия в финансируемых программах, "
         f"и предложат список программ, соответствующих вашим критериям.\n\n"
@@ -105,7 +110,10 @@ def action_check_age(update: Update, context: CallbackContext):
             f"однако вы можете проверить варианты сотрудничества с нами и переход к переписке с координатором",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
+                                      callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
                 [InlineKeyboardButton(text='Обратиться к координатору', url='https://t.me/israelway_IW')]
+
             ])
         )
 
@@ -116,11 +124,13 @@ def action_check_age(update: Update, context: CallbackContext):
             f"и на программу <a href='https://israelway.ru/onward-volunteering'>Онвард волонтёр</a> длительностью до двух недель.",
 
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text='МАСА 6 месяцев', url='https://israelway.ru/masa/all-programs/')],
+                [InlineKeyboardButton(text='МАСА 4-6 месяцев', url='https://israelway.ru/masa/all-programs/')],
                 [InlineKeyboardButton(text='Онвард Кампус', url='https://israelway.ru/onward-campus')],
                 [InlineKeyboardButton(text='Онвард волонтёр', url='https://israelway.ru/onward-volunteering')],
                 [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
                                       callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
+                                      callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
             ])
         )
 
@@ -129,10 +139,13 @@ def action_check_age(update: Update, context: CallbackContext):
             f"Поздравляем, вы можете подавать вашу кандидатуру на участие в программах <a href='https://israelway.ru/masa/all-programs/'>МАСА</a> длительностью до шести месяцев "
             f"и на программу <a href='https://israelway.ru/onward-volunteering'>Онвард волонтёр</a> длительностью до двух недель.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text='МАСА 6 месяцев', url='https://israelway.ru/masa/all-programs/')],
+                [InlineKeyboardButton(text='МАСА 4-6 месяцев', url='https://israelway.ru/masa/all-programs/')],
                 [InlineKeyboardButton(text='Онвард волонтёр', url='https://israelway.ru/onward-volunteering')],
                 [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
                                       callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
+                                      callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
+
             ])
         )
 
@@ -144,6 +157,8 @@ def action_check_age(update: Update, context: CallbackContext):
                 [InlineKeyboardButton(text='Онвард волонтёр', url='https://israelway.ru/onward-volunteering')],
                 [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
                                       callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
+                                      callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
             ])
         )
 
@@ -210,7 +225,6 @@ def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[i
     return None
 
 
-
 conv_handler = ConversationHandler(
     entry_points=[
         CommandHandler("start", action_to_base),
@@ -237,6 +251,7 @@ conv_handler = ConversationHandler(
     },
     fallbacks=[
         CallbackQueryHandler(action_to_base, pattern=rf"{CALLBACK_BUTTON_START_AGAIN}"),
+        CallbackQueryHandler(action_to_check_rights_step_1, pattern=rf"{CALLBACK_BUTTON_CHECK_RIGHTS}"),
         MessageHandler(Filters.regex(f"^{BUTTON_CHECK_RIGHTS}$"), action_to_check_rights_step_1),
         MessageHandler(Filters.text, action_state_answer),
     ],
