@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 
 from telegram.ext import Updater
 
-from bot.conversation import register_handlers
+from bot.handlers import register_handlers
 from settings import Settings
 
 updater = Updater(token=Settings.bot_token())
