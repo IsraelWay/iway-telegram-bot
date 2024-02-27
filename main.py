@@ -2,11 +2,9 @@ import threading
 import logging
 from logging.handlers import RotatingFileHandler
 
-from telegram.ext import MessageHandler, Updater, Filters
+from telegram.ext import Updater
 
-from bot.conversation import conv_handler
-from handlers.error_handler import error_handler
-from handlers.state_handlers import show_state_text
+from bot.conversation import register_handlers
 from settings import Settings
 
 updater = Updater(token=Settings.bot_token())
@@ -34,9 +32,10 @@ def main() -> None:
     set_logger()
 
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(conv_handler)
+    register_handlers(dispatcher)
+    # dispatcher.add_handler(conv_handler)
     # dispatcher.add_handler(MessageHandler(Filters.text, show_state_text))
-    dispatcher.add_error_handler(error_handler)
+    # dispatcher.add_error_handler(error_handler)
     updater.start_polling()
     updater.bot.send_message(75771603, "Bot started")
     print("Bot is running")

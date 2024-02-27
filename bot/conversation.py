@@ -1,10 +1,12 @@
 import re
 from typing import Optional
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, ParseMode, ReplyKeyboardMarkup, \
-    ReplyKeyboardRemove
+import telegram
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, ParseMode, ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler, CommandHandler, CallbackContext, MessageHandler, Filters, \
     CallbackQueryHandler
+from bot.error_handler import error_handler
+
 
 # Conversation states
 (
@@ -22,16 +24,18 @@ from telegram.ext import ConversationHandler, CommandHandler, CallbackContext, M
     ADMIN_CHECKIN,
 ) = range(1, 13)
 
-
-CALLBACK_BUTTON_START_AGAIN = "Начать заново"
-CALLBACK_BUTTON_YES = "Да"
-CALLBACK_BUTTON_CHECK_NEW_AGE = "Другой возраст"
-CALLBACK_BUTTON_NO = "Нет"
-CALLBACK_BUTTON_DONT_KNOW = "Не знаю"
-CALLBACK_BUTTON_CHECK_RIGHTS = "Проверить право"
-BUTTON_CHECK_RIGHTS = "Проверить право"
-BUTTON_START_AGAIN = "Начать заново"
-BUTTON_BACK = "В начало"
+CALLBACK_BUTTON_START_AGAIN = "🔄 Начать заново"
+CALLBACK_BUTTON_YES = "✅ Да"
+CALLBACK_BUTTON_CHECK_NEW_AGE = "Проверить другой возраст"
+CALLBACK_BUTTON_NO = "❌ Нет"
+CALLBACK_BUTTON_DONT_KNOW = "🧐 Не знаю"
+CALLBACK_BUTTON_CHECK_RIGHTS = "📃 Проверить право"
+BUTTON_GET_GIFT = "🎁 Получить подарок"
+BUTTON_CHECK_RIGHTS = "📃 Проверить право"
+BUTTON_START_AGAIN = "🔄 Начать заново"
+BUTTON_BACK = "🔄 В начало"
+BUTTON_CONNECT_TO_PERSON = "🙋 Обратиться к координатору"
+BUTTON_GO_TO_SITE = "👉 Перейти на наш сайт"
 
 
 def action_state_answer(update: Update, context: CallbackContext):
@@ -40,13 +44,15 @@ def action_state_answer(update: Update, context: CallbackContext):
 
 
 def action_to_base(update: Update, context: CallbackContext):
-
     context.bot.send_message(
         chat_id=update.effective_user.id,
         text=f"👋",
         disable_web_page_preview=True,
         reply_markup=ReplyKeyboardMarkup(
-            [[str(BUTTON_CHECK_RIGHTS), str(BUTTON_BACK)]],
+            [
+                [str(BUTTON_CHECK_RIGHTS)],
+                [str(BUTTON_GET_GIFT), str(BUTTON_BACK)]
+            ],
             one_time_keyboard=False,
             resize_keyboard=True,
         ),
@@ -55,19 +61,32 @@ def action_to_base(update: Update, context: CallbackContext):
     context.bot.send_message(
         chat_id=update.effective_user.id,
         parse_mode=ParseMode.HTML,
-        text=f"Держите нашу <a href='https://bit.ly/iway-deck'>презентацию</a> - "
-        f"тут ответы на большинство вопросов, которые, возможно, у вас возникнут.\n\n"
-        f"Если хотите узнать что-то более подробно, то пишите вот сюда @israelway_IW",
+        text=f"Проверьте ваше право получить финансируемую программу, "
+             f"задавайте вопросы и общайтесь с координаторами и не уходите без подарка - "
+             f"код на платную экскурсию в цифровом путеводителе по Израилю!",
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(text='Обратиться к координатору', url='https://t.me/israelway_IW')],
             [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_RIGHTS),
                                   callback_data=f"{CALLBACK_BUTTON_CHECK_RIGHTS}")],
-            [InlineKeyboardButton(text='Перейти на сайт', url='https://israelway.ru')]
+            [InlineKeyboardButton(text=str(BUTTON_CONNECT_TO_PERSON), url='https://t.me/israelway_IW')],
+            [InlineKeyboardButton(text=str(BUTTON_GET_GIFT), callback_data=f"{BUTTON_GET_GIFT}")],
+            [InlineKeyboardButton(text=str(BUTTON_GO_TO_SITE), url='https://israelway.ru')]
         ])
     )
 
     return BASE
+
+
+def action_gift_info(update: Update, context: CallbackContext):
+    context.bot.send_message(
+        update.effective_user.id,
+        f"How to get a gift",
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton(text='Готов получить код!', url='https://t.me/israelway_IW')],
+        ]))
+
+    return None
 
 
 def action_to_check_rights_step_1(update: Update, context: CallbackContext):
@@ -107,12 +126,13 @@ def action_check_age(update: Update, context: CallbackContext):
     if first_number < 17 or first_number > 40:
         update.message.reply_html(
             f"К сожалению, вы не можете претендовать на участие в программах Маса и Онвард, "
-            f"однако вы можете проверить варианты сотрудничества с нами и переход к переписке с координатором",
+            f"однако вы можете проверить варианты сотрудничества с нами - переходите к переписке с координатором",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
+                                      callback_data=f"{CALLBACK_BUTTON_CHECK_NEW_AGE}")],
                 [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
                                       callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
-                [InlineKeyboardButton(text='Обратиться к координатору', url='https://t.me/israelway_IW')]
+                [InlineKeyboardButton(text=str(BUTTON_CONNECT_TO_PERSON), url='https://t.me/israelway_IW')]
 
             ])
         )
@@ -201,9 +221,10 @@ def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[i
             update.effective_user.id,
             "К сожалению, вы не сможете получить финансирование, "
             "но можете принять участие в программах за полную стоимость.\n"
-            "Перейти к списку программ - переход сюда: <a href='https://israelway.ru/'>https://israelway.ru/</a>",
+            "Перейти к списку программ - <a href='https://israelway.ru/'>https://israelway.ru/</a>",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN), callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
+                                      callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
             ]),
             parse_mode=ParseMode.HTML,
         )
@@ -216,7 +237,8 @@ def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[i
             "(ссылка: <a href='https://www.gov.il/ru/Departments/Policies/government_law_of_return_nativ'>https://www.gov.il/ru/Departments/Policies/government_law_of_return_nativ</a>)"
             " и, если результат положительный, вернитесь к процессу регистрации",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN), callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
+                [InlineKeyboardButton(text=str(CALLBACK_BUTTON_START_AGAIN),
+                                      callback_data=f"{CALLBACK_BUTTON_START_AGAIN}")],
             ]),
             parse_mode=ParseMode.HTML,
         )
@@ -231,13 +253,8 @@ conv_handler = ConversationHandler(
         MessageHandler(Filters.text, action_to_base),
     ],
     states={
-        BASE: [
-            MessageHandler(
-                Filters.regex(f"^{str(BUTTON_CHECK_RIGHTS)}"), action_to_check_rights_step_1
-            )
-        ],
+        BASE: [],
         CHECK_RIGHT_STEP_1: [
-            MessageHandler(Filters.regex(f"^{BUTTON_CHECK_RIGHTS}$"), action_to_check_rights_step_1),
             CallbackQueryHandler(action_step_1_answer,
                                  pattern=rf"{CALLBACK_BUTTON_YES}|{CALLBACK_BUTTON_NO}|{CALLBACK_BUTTON_DONT_KNOW}"),
         ],
@@ -252,6 +269,8 @@ conv_handler = ConversationHandler(
     fallbacks=[
         CallbackQueryHandler(action_to_base, pattern=rf"{CALLBACK_BUTTON_START_AGAIN}"),
         CallbackQueryHandler(action_to_check_rights_step_1, pattern=rf"{CALLBACK_BUTTON_CHECK_RIGHTS}"),
+        CallbackQueryHandler(action_gift_info, pattern=rf"{BUTTON_GET_GIFT}"),
+        MessageHandler(Filters.regex(f"^{BUTTON_GET_GIFT}$"), action_gift_info),
         MessageHandler(Filters.regex(f"^{BUTTON_CHECK_RIGHTS}$"), action_to_check_rights_step_1),
         MessageHandler(Filters.text, action_state_answer),
     ],
@@ -260,3 +279,8 @@ conv_handler = ConversationHandler(
     per_chat=False,
     per_message=False,
 )
+
+
+def register_handlers(dispatcher: telegram.ext.Dispatcher):
+    dispatcher.add_handler(conv_handler)
+    dispatcher.add_error_handler(error_handler)
