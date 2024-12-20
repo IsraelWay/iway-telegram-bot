@@ -23,7 +23,7 @@ class Settings:
 
     @staticmethod
     def first_questions_link() -> str:
-        return "https://web.miniextensions.com/YknIZlIqVswRiGObohd4/" if Settings.IS_TEST else "https://web.miniextensions.com/YknIZlIqVswRiGObohd4/"
+        return "https://web.miniextensions.com/YknIZlIqVswRiGObohd4" if Settings.IS_TEST else "https://web.miniextensions.com/YknIZlIqVswRiGObohd4"
 
     @staticmethod
     def details_form() -> str:
