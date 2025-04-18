@@ -2,9 +2,10 @@ import re
 from typing import Optional
 
 import telegram
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, ParseMode, ReplyKeyboardMarkup
-from telegram.ext import ConversationHandler, CommandHandler, CallbackContext, MessageHandler, Filters, \
-    CallbackQueryHandler
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, ReplyKeyboardMarkup
+from telegram.constants import ParseMode
+from telegram.ext import ConversationHandler, CommandHandler, CallbackContext, MessageHandler, \
+    CallbackQueryHandler, filters, BaseHandler
 from bot.error_handler import error_handler
 from bot.texts import *
 from bot.texts import LINK_DOWNLOAD_APP, BUTTON_DOWNLOAD_APP
@@ -16,8 +17,8 @@ from bot.texts import LINK_DOWNLOAD_APP, BUTTON_DOWNLOAD_APP
 ) = range(1, 3)
 
 
-def action_welcome(update: Update, context: CallbackContext):
-    context.bot.send_message(
+async def action_welcome(update: Update, context: CallbackContext) -> None:
+    await context.bot.send_message(
         chat_id=update.effective_user.id,
         text=f"👋",
         disable_web_page_preview=True,
@@ -31,7 +32,7 @@ def action_welcome(update: Update, context: CallbackContext):
         ),
     )
 
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_user.id,
         parse_mode=ParseMode.HTML,
         text=TEXT_BOT_GREETINGS,
@@ -48,8 +49,8 @@ def action_welcome(update: Update, context: CallbackContext):
     return None
 
 
-def action_gift_info(update: Update, context: CallbackContext):
-    context.bot.send_message(
+async def action_gift_info(update: Update, context: CallbackContext):
+    await context.bot.send_message(
         update.effective_user.id,
         "%s" % TEXT_GIFT_INSTRUCTIONS,
         parse_mode=ParseMode.HTML,
@@ -62,8 +63,8 @@ def action_gift_info(update: Update, context: CallbackContext):
     return None
 
 
-def action_to_check_rights_step_1(update: Update, context: CallbackContext):
-    context.bot.send_message(
+async def action_to_check_rights_step_1(update: Update, context: CallbackContext):
+    await context.bot.send_message(
         update.effective_user.id,
         TEXT_STEP_1_WELCOME_STEP,
         disable_web_page_preview=True,
@@ -78,22 +79,22 @@ def action_to_check_rights_step_1(update: Update, context: CallbackContext):
     return CHECK_RIGHT_STEP_1
 
 
-def action_check_age(update: Update, context: CallbackContext):
+async def action_check_age(update: Update, context: CallbackContext):
     first_number_match = re.search(r'\d+', update.message.text)
 
     if not first_number_match:
-        update.message.reply_html(
+        await update.message.reply_html(
             "%s" % TEXT_WAITING_FOR_AGE_INPUT
         )
         return None
 
     first_number = int(first_number_match.group(0))
-    update.message.reply_html(
+    await update.message.reply_html(
         TEXT_YOUP_PICKED_AGE % first_number,
     )
 
     if first_number < 17 or first_number > 40:
-        update.message.reply_html(
+        await update.message.reply_html(
             TEXT_STEP_1_PROGRAMS_DENIED,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(text=str(CALLBACK_BUTTON_CHECK_NEW_AGE),
@@ -106,7 +107,7 @@ def action_check_age(update: Update, context: CallbackContext):
         )
 
     if first_number in range(17, 31):
-        update.message.reply_html(
+        await update.message.reply_html(
             "%s" % TEXT_STEP_1_PROGRAMS_17_31,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(text=('%s' % BUTTON_MASA_4_6_MONTHS), url=('%s' % LINK_ALL_PROGRAMS))],
@@ -120,7 +121,7 @@ def action_check_age(update: Update, context: CallbackContext):
         )
 
     if first_number in range(31, 35):
-        update.message.reply_html(
+        await update.message.reply_html(
             "%s" % TEXT_STEP_1_PROGRAMS_31_35,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(text=BUTTON_MASA_4_6_MONTHS, url=('%s' % LINK_ALL_PROGRAMS))],
@@ -134,7 +135,7 @@ def action_check_age(update: Update, context: CallbackContext):
         )
 
     if first_number in range(35, 41):
-        update.message.reply_html(
+        await update.message.reply_html(
             TEXT_STEP_1_PROGRAMS_35_41,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(text=BUTTON_ONWARD_VOLONTEERING, url=('%s' % LINK_ONWARD_VOLONTEERING))],
@@ -148,14 +149,14 @@ def action_check_age(update: Update, context: CallbackContext):
     return None
 
 
-def callback_action_check_age_again(update: Update, context: CallbackContext) -> Optional[int]:
+async def callback_action_check_age_again(update: Update, context: CallbackContext) -> Optional[int]:
     answer = update.callback_query.data
 
-    update.callback_query.answer()
-    update.callback_query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup([]))
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup([]))
 
     if answer == CALLBACK_BUTTON_CHECK_NEW_AGE:
-        context.bot.send_message(
+        await context.bot.send_message(
             update.effective_user.id,
             "%s" % TEXT_STEP_2_HOW_OLD_ARE_YOU,
             parse_mode=ParseMode.HTML,
@@ -164,14 +165,14 @@ def callback_action_check_age_again(update: Update, context: CallbackContext) ->
     return CHECK_RIGHT_STEP_2
 
 
-def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[int]:
+async def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[int]:
     answer = update.callback_query.data
 
-    update.callback_query.answer()
-    update.callback_query.delete_message()
+    await update.callback_query.answer()
+    await update.callback_query.delete_message()
 
     if answer == CALLBACK_BUTTON_YES:
-        context.bot.send_message(
+        await context.bot.send_message(
             update.effective_user.id,
             "%s" % TEXT_STEP_2_HOW_OLD_ARE_YOU,
             parse_mode=ParseMode.HTML,
@@ -179,7 +180,7 @@ def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[i
         return CHECK_RIGHT_STEP_2
 
     if answer == CALLBACK_BUTTON_NO:
-        context.bot.send_message(
+        await context.bot.send_message(
             update.effective_user.id,
             TEXT_STEP_1_NO_ROOTS,
             reply_markup=InlineKeyboardMarkup([
@@ -191,7 +192,7 @@ def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[i
         return None
 
     if answer == CALLBACK_BUTTON_DONT_KNOW:
-        context.bot.send_message(
+        await context.bot.send_message(
             update.effective_user.id,
             TEXT_STEP_1_IDK,
             reply_markup=InlineKeyboardMarkup([
@@ -204,25 +205,25 @@ def action_step_1_answer(update: Update, context: CallbackContext) -> Optional[i
 
     return None
 
-
-conv_handler = ConversationHandler(
-    entry_points=[
-        CallbackQueryHandler(action_to_check_rights_step_1, pattern=rf"{CALLBACK_BUTTON_CHECK_RIGHTS}"),
-        MessageHandler(Filters.regex(f"^{BUTTON_CHECK_RIGHTS}$"), action_to_check_rights_step_1),
-        CallbackQueryHandler(callback_action_check_age_again,
-                             pattern=rf"{CALLBACK_BUTTON_CHECK_NEW_AGE}"),
-    ],
-    states={
+states: dict[object, list[BaseHandler]] = {
         CHECK_RIGHT_STEP_1: [
             CallbackQueryHandler(action_step_1_answer,
                                  pattern=rf"{CALLBACK_BUTTON_YES}|{CALLBACK_BUTTON_NO}|{CALLBACK_BUTTON_DONT_KNOW}"),
         ],
         CHECK_RIGHT_STEP_2: [
-            MessageHandler(Filters.regex(f"^{BUTTON_BACK}$"), action_welcome),
-            MessageHandler(Filters.text, action_check_age),
-
+            MessageHandler(filters.Regex(f"^{BUTTON_BACK}$"), action_welcome),
+            MessageHandler(filters.TEXT, action_check_age),
         ]
-    },
+    }
+
+conv_handler = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(action_to_check_rights_step_1, pattern=rf"{CALLBACK_BUTTON_CHECK_RIGHTS}"),
+        MessageHandler(filters.Regex(f"^{BUTTON_CHECK_RIGHTS}$"), action_to_check_rights_step_1),
+        CallbackQueryHandler(callback_action_check_age_again,
+                             pattern=rf"{CALLBACK_BUTTON_CHECK_NEW_AGE}"),
+    ],
+    states=states,
     fallbacks=[],
     allow_reentry=True,
     name=("%s" % CONVERSATION_NAME),
@@ -231,11 +232,11 @@ conv_handler = ConversationHandler(
 )
 
 
-def register_handlers(dispatcher: telegram.ext.Dispatcher):
-    dispatcher.add_handler(CommandHandler("start", action_welcome))
-    dispatcher.add_handler(MessageHandler(Filters.regex(f"^{BUTTON_GET_GIFT}$"), action_gift_info))
-    dispatcher.add_handler(CallbackQueryHandler(action_gift_info, pattern=rf"{BUTTON_GET_GIFT}"))
-    dispatcher.add_handler(CallbackQueryHandler(action_welcome, pattern=rf"{CALLBACK_BUTTON_START_AGAIN}"))
-    dispatcher.add_handler(conv_handler)
-    dispatcher.add_handler(MessageHandler(Filters.text, action_welcome))
-    dispatcher.add_error_handler(error_handler)
+def register_handlers(app: telegram.ext.Application):
+    app.add_handler(CommandHandler("start", action_welcome))
+    app.add_handler(MessageHandler(filters.Regex(f"^{BUTTON_GET_GIFT}$"), action_gift_info))
+    app.add_handler(CallbackQueryHandler(action_gift_info, pattern=rf"{BUTTON_GET_GIFT}"))
+    app.add_handler(CallbackQueryHandler(action_welcome, pattern=rf"{CALLBACK_BUTTON_START_AGAIN}"))
+    app.add_handler(conv_handler)
+    app.add_handler(MessageHandler(filters.TEXT, action_welcome))
+    app.add_error_handler(error_handler)

@@ -1,21 +1,29 @@
-version: "3"
+version: "3.8"
 services:
-  crm:
-    image: ipolotsky/israelway-crm
+  api:
     platform: linux/amd64
-    labels:
-      autoheal: true
     build:
       context: .
-      dockerfile: Dockerfile
-    volumes:
-      - "./iway-crm.log:/opt/iway-crm.log"
+      dockerfile: Dockerfile-flask
     ports:
       - "5000:5000"
     env_file:
       - .env
+    volumes:
+      - "./iway-api.log:/app/iway-api.log"
+    restart: unless-stopped
     healthcheck:
-      test: curl -sS http://127.0.0.1:5000?check=health || exit 1
+      test: curl -sS http://localhost:5000?check=health || exit 1
       interval: 30s
       timeout: 10s
+
+  bot:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile-bot
+    env_file:
+      - .env
+    volumes:
+      - "./iway-bot.log:/app/iway-bot.log"
     restart: unless-stopped

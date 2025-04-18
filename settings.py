@@ -1,9 +1,20 @@
 import os
 
+from flask.cli import load_dotenv
+load_dotenv(".env")
+
 
 class Settings:
 
     IS_TEST = True
+
+    @staticmethod
+    def admin_id():
+        try:
+            from_env = os.environ[f"ADMIN_ID{'_TEST' if Settings.IS_TEST else ''}"]
+        except KeyError:
+            from_env = None
+        return from_env if from_env else 75771603
 
     @staticmethod
     def bot_token():

@@ -2,8 +2,7 @@ import logging
 import traceback
 import html
 import json
-from telegram import Update, ParseMode
-
+from telegram import Update
 from telegram.ext import (
     CallbackContext,
 )

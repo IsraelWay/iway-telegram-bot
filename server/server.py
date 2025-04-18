@@ -1,28 +1,67 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
 import json
-import threading
+from logging.handlers import RotatingFileHandler
+
 import markdown
 import logging
 
 from pprint import pprint
 
 from time import sleep
+
+import requests
 from flask import Flask, request
 
 from mail import mail_service
 from mail.mail_service import render_mail
-from main import get_updater
 from flask_httpauth import HTTPTokenAuth
 
-from server.iway_requests import AirtableRequest
-from server.iway_responses import DetailedResponse
+from iway_requests import AirtableRequest
+from iway_responses import DetailedResponse
 from settings import Settings
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 
-c = threading.Condition()
+MAX_MESSAGE_LENGTH = 4000
 
+
+def send_telegram_message(chat_id: int, text: str, parse_mode="HTML") -> None:
+    url = f"https://api.telegram.org/bot{Settings.bot_token()}/sendMessage"
+    logger = logging.getLogger('root')
+
+    # разбиваем текст по частям
+    for i in range(0, len(text), MAX_MESSAGE_LENGTH):
+        chunk = text[i:i + MAX_MESSAGE_LENGTH]
+        payload = {
+            "chat_id": chat_id,
+            "text": chunk,
+            "parse_mode": parse_mode
+        }
+        try:
+            response = requests.post(url, json=payload, timeout=5)
+            if response.status_code != 200:
+                logger.warning(f"Telegram error: {response.text}")
+        except Exception as e:
+            logger.exception(f"Telegram send failed: {e}")
+
+
+def set_logger():
+    log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
+
+    my_handler = RotatingFileHandler('iway-api.log', maxBytes=50 * 1024 * 1024, backupCount=2)
+    my_handler.setFormatter(log_formatter)
+    my_handler.setLevel(logging.INFO)
+
+    app_log = logging.getLogger('root')
+    app_log.setLevel(logging.INFO)
+
+    app_log.addHandler(my_handler)
+
+
+#
+# Start
+#
 app = Flask("Flask")
-cors = CORS(app)
+CORS(app, resources={r"*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 auth = HTTPTokenAuth(scheme='Bearer', header='Authorization')
@@ -31,29 +70,26 @@ print("Server is running")
 
 @app.before_request
 def before_request_func():
-    updater = get_updater()
-    c.acquire()
-    req_data = {}
-    req_data['endpoint'] = request.endpoint
-    req_data['method'] = request.method
-    req_data['cookies'] = request.cookies
-    req_data['headers'] = dict(request.headers)
+    req_data = {'endpoint': request.endpoint, 'method': request.method, 'cookies': request.cookies,
+                'headers': dict(request.headers)}
     req_data['headers'].pop('Cookie', None)
     req_data['args'] = request.args
     req_data['form'] = request.form
     req_data['remote_addr'] = request.remote_addr
-    updater.bot.send_message(75771603, "Запрос на server. " + json.dumps(req_data, indent=4))
+    send_telegram_message(
+        Settings.admin_id(), "Server request: " + json.dumps(req_data, indent=4))
 
     req_data['data'] = request.data.decode("utf-8")
     logging.getLogger('root').info("/ request " + json.dumps(req_data, indent=4))
-    c.notify_all()
-    c.release()
 
 
 @auth.verify_token
 def verify_token(token):
-    schema, token = request.headers['Authorization'].split(None, 1)
-    return bool(token == Settings.auth_token())
+    try:
+        schema, token = request.headers.get('Authorization', '').split(None, 1)
+        return token == Settings.auth_token()
+    except ValueError:
+        return False
 
 
 @app.route("/welcome", methods=['POST'])
@@ -400,10 +436,17 @@ def hook():
     return "sone"
 
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return "OK", 200
+
+
 @app.route('/')
 def hello():
     return 'Welcome to IsraelWay API 1.0'
 
 
-def run_server():
-    app.run(host="0.0.0.0")
+if __name__ == '__main__':
+    set_logger()
+    logging.log(logging.INFO, "Starting server... iw logger is running")
+    app.run(debug=True, host='0.0.0.0', port=5000)
