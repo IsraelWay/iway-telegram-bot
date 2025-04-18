@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: curl -f http://localhost:5000/health || exit 1
-      interval: 30s
+      interval: 6h
       timeout: 10s
 
   bot:
