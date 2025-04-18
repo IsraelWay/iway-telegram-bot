@@ -17,7 +17,7 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None):
     html_content = content
     sender = {"name": "IsraelWay Team", "email": "team@israelway.ru"}
     to = [{"email": to, "name": name}]
-    bcc = [{"email": "mail-logs@israelway.ru", "name": "mail-logs"}]
+    bcc = [{"email": "no-reply@israelway.ru", "name": "mail-logs"}]
     cc = [{"email": cc, "name": "IsraelWay copy"}] if cc else None
     # bcc = [{"name": "John Doe", "email": "example@example.com"}]
     # reply_to = {"email": "replyto@domain.com", "name": "John Doe"}
