@@ -6,7 +6,7 @@ load_dotenv(".env")
 
 class Settings:
 
-    IS_TEST = True
+    IS_TEST = False
 
     @staticmethod
     def admin_id():

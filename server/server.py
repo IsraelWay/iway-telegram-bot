@@ -16,16 +16,18 @@ from mail import mail_service
 from mail.mail_service import render_mail
 from flask_httpauth import HTTPTokenAuth
 
-from iway_requests import AirtableRequest
-from iway_responses import DetailedResponse
+from server.iway_requests import AirtableRequest
+from server.iway_responses import DetailedResponse
 from settings import Settings
 from flask_cors import CORS
 
 MAX_MESSAGE_LENGTH = 4000
 
+TELEGRAM_ENDPOINT = f"https://api.telegram.org/bot{Settings.bot_token()}"
+
 
 def send_telegram_message(chat_id: int, text: str, parse_mode="HTML") -> None:
-    url = f"https://api.telegram.org/bot{Settings.bot_token()}/sendMessage"
+    url = f"{TELEGRAM_ENDPOINT}/sendMessage"
     logger = logging.getLogger('root')
 
     # разбиваем текст по частям
