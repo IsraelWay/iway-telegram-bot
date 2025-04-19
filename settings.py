@@ -9,6 +9,30 @@ class Settings:
     IS_TEST = False
 
     @staticmethod
+    def airtable_api_key():
+        try:
+            from_env = os.environ[f"AIRTABLE_API_KEY{'_TEST' if Settings.IS_TEST else ''}"]
+        except KeyError:
+            from_env = None
+        return from_env if from_env else None
+
+    @staticmethod
+    def airtable_leads_table_id():
+        try:
+            from_env = os.environ[f"AIRTABLE_LEADS_TABLE_ID{'_TEST' if Settings.IS_TEST else ''}"]
+        except KeyError:
+            from_env = None
+        return from_env if from_env else "tblUyPrVrDu4k2O8w"
+
+    @staticmethod
+    def airtable_base_id():
+        try:
+            from_env = os.environ[f"AIRTABLE_BASE_ID{'_TEST' if Settings.IS_TEST else ''}"]
+        except KeyError:
+            from_env = None
+        return from_env if from_env else "app4VDqwiDMUFRPt9"
+
+    @staticmethod
     def admin_id():
         try:
             from_env = os.environ[f"ADMIN_ID{'_TEST' if Settings.IS_TEST else ''}"]

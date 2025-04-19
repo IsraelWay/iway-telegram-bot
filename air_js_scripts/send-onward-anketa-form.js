@@ -17,7 +17,7 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка анекты масы")
+output.markdown("Отправка анекты Onward")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
 
@@ -29,46 +29,47 @@ if (!record.getCellValue("target")) {
     output.markdown("Не указан target - направление, куда хочет лид");
     return;
 }
-if (record.getCellValueAsString("target") != "masa") {
-    output.markdown("Направление не маса (" + record.getCellValueAsString("target") + ")");
+if (record.getCellValueAsString("target") != "onward") {
+    output.markdown("Направление не Onward (" + record.getCellValueAsString("target") + ")");
     return;
 }
 
-let anketa = record.getCellValue("Анкета масы");
-let anketa_id = null;
-let ankets = base.getTable("Masa анкеты");
-if (!anketa) {
-    anketa_id = await ankets.createRecordAsync({
+let onward_form_from_lead = record.getCellValue("Onward анкета");
+let onward_form_id = null;
+let onward_forms_table = base.getTable("Onward анкеты");
+
+if (!onward_form_from_lead) {
+    onward_form_id = await onward_forms_table.createRecordAsync({
         'Lead': [{id: record.id}],
     });
 }
 else {
-    anketa_id = anketa[0].id;
+    onward_form_id = onward_form_from_lead[0].id;
 }
-
-let ank_obj = await ankets.selectRecordAsync(anketa_id);
-if (!ank_obj) {
+let onward_form = await onward_forms_table.selectRecordAsync(onward_form_id);
+if (!onward_form) {
     output.clear();
-    output.markdown("## Не найден объект анкеты для " + record.getCellValueAsString("Info"));
+    output.markdown("## Не найден объект onward-анкеты для " + record.getCellValueAsString("Info"));
     return;
 }
-
 
 // тело письма
 let email_templates_base = base.getTable("Шаблоны писем");
 let email_templates = await email_templates_base.selectRecordsAsync();
 let email_html = "";
+let email_picture = "";
 for (let template of email_templates.records) {
-   if (template.getCellValueAsString("Название письма") == "anketa_masa") {
+   if (template.getCellValueAsString("Название письма") == "anketa_onward") {
        email_html = template.getCellValueAsString("Html");
+       email_picture = template.getCellValueAsString("picture_url");
        break;
    }
 }
 
 output.clear();
-output.markdown(`## Отправка анкеты маса для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
-if (record.getCellValueAsString("(auto) отправка анкеты маса")) {
-    output.markdown("### Письмо с анкетой уже ранее отправляли " + record.getCellValueAsString("(auto) отправка анкеты маса"));
+output.markdown(`## Отправка анкеты Onward для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+if (record.getCellValueAsString("(auto) отправка анкеты onward")) {
+    output.markdown("### Письмо с анкетой Onward уже ранее отправляли " + record.getCellValueAsString("(auto) отправка анкеты onward"));
 }
 
 
@@ -76,7 +77,7 @@ let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
     [
         {label: 'Отмена', value: 'cancel', variant: 'danger'},
-        {label: 'Да, вперед, отправить анкету', value: 'yes', variant: 'primary'},
+        {label: 'Да, вперед, отправить анкету Onward', value: 'yes', variant: 'primary'},
     ],
 );
 if (shouldContinue === 'cancel') {
@@ -87,9 +88,9 @@ if (shouldContinue === 'cancel') {
 
 let actions = {
           "bottom" : {
-            "link": ank_obj.getCellValueAsString("link_to_edit_record"),
-            "text": "Заполнить анкету"
-          },
+            "link": onward_form.getCellValueAsString("link_to_edit_record"),
+            "text": "Заполнить анкету Onward"
+          }
       };
 
 
@@ -106,8 +107,8 @@ let response = await fetch(host + '/send-email', {
       email_html: email_html,
       email_picture: "https://static.tildacdn.com/tild6631-3136-4364-a433-646365623737/download.jpg",
       actions: actions,
-      main_title: "Анкеты на программу Маса",
-      subject: "IsraelWay team - анкета на программу Маса",
+      main_title: "Анкета на программу Onward",
+      subject: "IsraelWay team - Анкета на программу Onward",
       id_record: record.id,
       tg_id: ""//record.getCellValueAsString("tg_id")
   })
@@ -126,7 +127,7 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) отправка анкеты маса': new Date(),
+    '(auto) отправка анкеты onward': new Date(),
 });
 
 output.clear();

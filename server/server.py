@@ -13,38 +13,15 @@ from time import sleep
 import requests
 from flask import Flask, request
 
+from bot.sync_telegram_utils import send_telegram_message
 from mail import mail_service
 from mail.mail_service import render_mail
 from flask_httpauth import HTTPTokenAuth
 
-from server.iway_requests import AirtableRequest
+from server.iway_requests import AirtableRequest, ChangeStatusRequest
 from server.iway_responses import DetailedResponse
 from settings import Settings
 from flask_cors import CORS
-
-MAX_MESSAGE_LENGTH = 4000
-
-TELEGRAM_ENDPOINT = f"https://api.telegram.org/bot{Settings.bot_token()}"
-
-
-def send_telegram_message(chat_id: int, text: str, parse_mode="HTML") -> None:
-    url = f"{TELEGRAM_ENDPOINT}/sendMessage"
-    logger = logging.getLogger('root')
-
-    # разбиваем текст по частям
-    for i in range(0, len(text), MAX_MESSAGE_LENGTH):
-        chunk = text[i:i + MAX_MESSAGE_LENGTH]
-        payload = {
-            "chat_id": chat_id,
-            "text": chunk,
-            "parse_mode": parse_mode
-        }
-        try:
-            response = requests.post(url, json=payload, timeout=5)
-            if response.status_code != 200:
-                logger.warning(f"Telegram error: {response.text}")
-        except Exception as e:
-            logger.exception(f"Telegram send failed: {e}")
 
 
 def set_logger():
@@ -476,6 +453,26 @@ def send_email():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+@app.route("/change-lead-new-status", methods=['POST'])
+@auth.login_required
+def change_status():
+    change_status_request = ChangeStatusRequest(request)
+    if not change_status_request.validate():
+        return DetailedResponse(
+            result=False, message=f"Failed to change status {change_status_request.errors}").__dict__
+
+    result = False
+    try:
+        result = change_status_request.apply()
+    except Exception as e:
+        send_telegram_message(Settings.admin_id(), f"⚠️ Не удалось изменить статус: {e}")
+
+    message = "Status changed successfully" if result \
+        else f"Failed to change status {change_status_request.errors.__dict__}"
+
+    return DetailedResponse(result=result, message=message).__dict__
+
+
 @app.route("/hook", methods=['POST'])
 def hook():
     pprint(request.files)
@@ -483,7 +480,7 @@ def hook():
     pprint(request.json)
     pprint(request.query_string)
     pprint(request.data)
-    return "sone"
+    return "Done"
 
 
 @app.route('/health', methods=['GET'])

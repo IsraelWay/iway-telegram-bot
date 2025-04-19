@@ -1,5 +1,10 @@
-#  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
+#  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2025.
 import logging
+
+import requests
+
+from bot.sync_telegram_utils import send_telegram_message
+from settings import Settings
 
 
 class AirtableRequest:
@@ -141,3 +146,51 @@ class AirtableRequest:
             self.anketa_zalog_url = request_data['anketa_zalog_url']
         elif "anketa_zalog_url" in required_fields:
             raise Exception("No required param anketa_zalog_url")
+
+
+class ChangeStatusRequest:
+    def __init__(self, request):
+        data = request.get_json()
+        self.id_record = data["id"] if "id" in data else None
+        self.new_status = data["new_status"] if "new_status" in data else None
+        self.errors = []
+
+    def validate(self):
+        if not self.id_record:
+            self.errors.append("No required param id")
+            return False
+        if not self.new_status:
+            self.errors.append("No required param new_status")
+            return False
+        return True
+
+    def apply(self) -> bool:
+        base_id = Settings.airtable_base_id()
+        table_name = Settings.airtable_leads_table_id()
+        api_key = Settings.airtable_api_key()
+
+        url = f"https://api.airtable.com/v0/{base_id}/{table_name}/{self.id_record}"
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "fields": {
+                "Status": self.new_status
+            }
+        }
+
+        response = requests.patch(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+            logging.log(logging.INFO, f"Change status success for record {self.id_record} to {self.new_status}")
+            print(f"Change status success for record {self.id_record} to {self.new_status}")
+            print(response.json())
+            return True
+
+        print(response.status_code, response.text)
+        self.errors.append(response.text)
+        send_telegram_message(Settings.admin_id(), f"Airtable error: {response.text}")
+        return False
