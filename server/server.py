@@ -1,4 +1,5 @@
 #  Author: Ilya Polotsky (ipolo.box@gmail.com). Copyright (c) 2022.
+import base64
 import json
 from logging.handlers import RotatingFileHandler
 
@@ -402,6 +403,46 @@ def onward_docs():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
+MAX_TOTAL_ATTACHMENT_SIZE=20*1024*1024
+
+
+def prepare_attachments(attachments):
+    files = []
+    total_size = 0
+
+    for index, att in enumerate(attachments):
+        if not isinstance(att, dict):
+            logging.error(f"Attachment #{index} is not a dictionary.")
+            continue
+
+        if "url" not in att or not att["url"]:
+            logging.error(f"Attachment #{index} has no URL.")
+            continue
+
+        filename = att.get("filename") or "attachment.pdf"
+        try:
+            response = requests.get(att["url"])
+            response.raise_for_status()
+        except Exception as e:
+            print(f"⚠️ Ошибка при скачивании {filename} with url {att['url']}: {e}")
+            continue
+
+        content = response.content
+        total_size += len(content)
+
+        if total_size > MAX_TOTAL_ATTACHMENT_SIZE:
+            print("⚠️ Общий размер вложений превышает 20 МБ. Вложения не будут отправлены.")
+            return None
+
+        encoded_content = base64.b64encode(content).decode()
+        files.append({
+            "name": filename,
+            "content": encoded_content
+        })
+
+    return files if files else None
+
+
 @app.route("/send-email", methods=['POST'])
 @auth.login_required
 def send_email():
@@ -421,9 +462,16 @@ def send_email():
         main_title=air_request.main_title
     )
 
+    attachments = None
+    if hasattr(air_request, "attachments") and len(air_request.attachments) > 0:
+        try:
+            attachments = prepare_attachments(air_request.attachments)
+        except Exception as e:
+            send_telegram_message(Settings.admin_id(), f"⚠️ Не удалось получить вложения: {e}")
+
     mail_service.send(to=air_request.email, cc=air_request.cc if air_request.cc else None,
                       subject=air_request.subject if air_request.subject else "IsraelWay team",
-                      name=air_request.full_name, content=mail_html)
+                      name=air_request.full_name, content=mail_html, attachments=attachments)
 
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 

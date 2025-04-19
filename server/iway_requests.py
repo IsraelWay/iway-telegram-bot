@@ -54,6 +54,11 @@ class AirtableRequest:
         elif "actions" in required_fields:
             raise Exception("No required param actions")
 
+        if "attachments" in request_data:
+            self.attachments = request_data['attachments']
+        elif "attachments" in required_fields:
+            raise Exception("No required param attachments")
+
         if "main_title" in request_data:
             self.main_title = request_data['main_title']
         elif "main_title" in required_fields:
