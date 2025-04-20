@@ -17,43 +17,42 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка дат прилета")
+output.markdown("Отправка на почту плана + запроса на данные")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
+
 if (!record) {
-    output.markdown("Записи нет - напишите Илюше");
+    output.markdown("Запись на найдена, напишите Илюше");
     return;
 }
-
-if (!record.getCellValueAsString("Ориентировочные даты прилета")) {
-    output.markdown("## Не указаны ориентировочные даты прилета");
+if (!record.getCellValue("Первичное интервью")) {
+    output.markdown("Первичное интервью не пройдено");
     return;
 }
-
-output.clear();
+if (!record.getCellValue("target")) {
+    output.markdown("Не указан target - направление, куда хочет лид");
+    return;
+}
 
 // тело письма
 let email_templates_base = base.getTable("Шаблоны писем");
 let email_templates = await email_templates_base.selectRecordsAsync();
 let email_html = "";
-let email_picture = "";
-
 for (let template of email_templates.records) {
-   if (template.getCellValueAsString("Название письма") == "avia-dates") {
+   if (template.getCellValueAsString("Название письма") == "plan_" + record.getCellValueAsString("target")) {
        email_html = template.getCellValueAsString("Html");
-       email_picture = template.getCellValueAsString("picture_url");
        break;
    }
 }
 
 output.clear();
-output.markdown(`## Отправка дат прилета ${record.getCellValueAsString("Ориентировочные даты прилета")} для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+output.markdown(`## Отправка плана действий для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
 
 let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
     [
         {label: 'Отмена', value: 'cancel', variant: 'danger'},
-        {label: 'Да, вперед', value: 'yes', variant: 'primary'},
+        {label: 'Да, вперед, отправить план', value: 'yes', variant: 'primary'},
     ],
 );
 if (shouldContinue === 'cancel') {
@@ -62,8 +61,16 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
+let actions = {
+    "top" : {
+        "link": record.getCellValueAsString("link_to_form_for_detailed_data"),
+        "text": "Заполнить данные о себе"
+    }
+};
+
+
 // запрос
-let response = await fetch(host + '/avia-dates', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -73,16 +80,19 @@ let response = await fetch(host + '/avia-dates', {
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
-      email_picture: email_picture,
-      avia_dates: record.getCellValueAsString("Ориентировочные даты прилета"),
+      email_picture: "https://static.tildacdn.com/tild3532-6638-4230-b134-626639323661/glenn-carstens-peter.jpg",
+      actions: actions,
+      main_title: "Отлично, ниже кнопка для заполнения данных о себе, а под ней - наш план!",
+      subject: "IsraelWay team - детальный план",
       id_record: record.id,
-      tg_id: record.getCellValueAsString("tg_id")
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
     output.markdown("Ошибка соединения: " + error);
     output.inspect(error)
 });
+
 
 // Response
 let data = await response.json();
@@ -93,8 +103,8 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) отправка согласованных дат прилета': new Date(),
+    '(auto) отправка плана + запроса данных': new Date(),
 });
 
 output.clear();
-output.markdown(`### Даты ${record.getCellValueAsString("Ориентировочные даты прилета")} отправлены ${record.getCellValueAsString("Info")}`);
+output.markdown(`### План (${record.getCellValueAsString('target')}) успешно отправлен`);

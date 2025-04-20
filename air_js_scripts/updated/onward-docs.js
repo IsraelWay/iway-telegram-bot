@@ -17,7 +17,7 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка медбланка")
+output.markdown("Отправка запроса на документы для онварда")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
 
@@ -28,6 +28,11 @@ if (!record) {
     return;
 }
 
+if (record.getCellValueAsString("target") != "onward") {
+    output.markdown("## Чет не то! Направление не Onward");
+    return;
+}
+
 // тело письма
 let email_templates_base = base.getTable("Шаблоны писем");
 let email_templates = await email_templates_base.selectRecordsAsync();
@@ -35,7 +40,7 @@ let email_html = "";
 let email_picture = ""
 
 for (let template of email_templates.records) {
-   if (template.getCellValueAsString("Название письма") == "medblank") {
+   if (template.getCellValueAsString("Название письма") == "onward-docs") {
        email_html = template.getCellValueAsString("Html");
        email_picture = template.getCellValueAsString("picture_url");
        break;
@@ -43,13 +48,13 @@ for (let template of email_templates.records) {
 }
 
 output.clear();
-output.markdown(`## Отправка медбланка для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+output.markdown(`## Отправка заропса документов для Onward для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
 
 let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
     [
         {label: 'Отмена', value: 'cancel', variant: 'danger'},
-        {label: 'Да, вперед, отправить медбланк', value: 'yes', variant: 'primary'},
+        {label: 'Да, вперед, отправить запрос участнику', value: 'yes', variant: 'primary'},
     ],
 );
 if (shouldContinue === 'cancel') {
@@ -58,8 +63,15 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
+let actions = {
+    "top" : {
+        "link": record.getCellValueAsString("link_to_upload_onward_check_docs"),
+        "text": "Загрузить документы"
+    }
+};
+
 // запрос
-let response = await fetch(host + '/medblank', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -69,9 +81,11 @@ let response = await fetch(host + '/medblank', {
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
-      email_picture: email_picture,
+      actions: actions,
+      main_title: "Документы на Onward",
+      subject: "IsraelWay team - документы на Onward",
       id_record: record.id,
-      tg_id: record.getCellValueAsString("tg_id")
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
@@ -88,8 +102,8 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) Медбланк отправлен': new Date(),
+    '(auto) отправка письма о доках на онвадр': new Date(),
 });
 
 output.clear();
-output.markdown(`### Медбланк успешно отправлена ${record.getCellValueAsString("Info")}`);
+output.markdown(`### Запрос на документы Onward успешно отправлен ${record.getCellValueAsString("Info")}`);

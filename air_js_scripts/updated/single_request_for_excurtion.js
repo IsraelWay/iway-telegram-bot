@@ -34,6 +34,10 @@ let email_templates_base = record.getCellValueAsString("Email html");
 
 let data4Table = [
     {
+        "name": "Номер заявки",
+        "value": record.getCellValueAsString("Номер заявки")
+    },
+    {
         "name": "Название экскурсии:",
         "value": record.getCellValueAsString("Название экскурсии")
     },
@@ -53,6 +57,11 @@ let data4Table = [
         "name": "Дополнительная информация:",
         "value":
             record.getCellValueAsString("Заметки для участников")
+    },
+    {
+        "name": "Статус",
+        "value":
+            record.getCellValueAsString("Статус")
     }
 ];
 
@@ -71,7 +80,6 @@ output.clear();
 output.markdown(`## Отправка подтверждения однодневной экскурсии на ${record.getCellValueAsString("Email")}`);
 output.markdown(`### Письмо будет содержать:`);
 output.text(record.getCellValueAsString("Email html") + tableMarkup);
-output.markdown(`### И кнопку: "Данные о заявке тут" с ссылкой ` + record.getCellValueAsString("Просмотр заявки"));
 
 let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
@@ -86,40 +94,38 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
-let actions = {
-          "subbottom" : {
-            "link": record.getCellValueAsString("Просмотр заявки"),
-            "text": "Данные о заявке тут"
-        },
-      };
-
 let vaucherAttachment = record.getCellValue("ваучер (CКАЧАТЬ И РАСПЕЧАТАТЬ)");
+let files = [];
 if (vaucherAttachment) {
-    actions.bottom = {
-        "link": record.getCellValueAsString("Ваучеры (скачать)"),
-        "text": "Скачать ваучеры"
+    for (let file of vaucherAttachment) {
+        files.push({
+            filename: file.filename,
+            url: file.url
+        });
     }
 }
 
 // запрос
+let bodyString = JSON.stringify({
+      email: record.getCellValueAsString("Email"),
+      full_name: record.getCellValueAsString("Email full name"),
+      email_html: record.getCellValueAsString("Email html") + tableMarkup,
+      email_picture: "https://static.tildacdn.com/tild3036-3731-4331-b837-613537663963/Screenshot_2023-12-2.png",
+      actions: {},
+      main_title: "Подтверждение заявки на однодневную экскурсию",
+      subject: "IsraelWay team - подтверждение заявки на однодневную экскурсию",
+      id_record: record.id,
+      attachments: files,
+      tg_id: ""//record.getCellValueAsString("tg_id")
+  });
+
 let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
       "Content-Type": "application/json"
   },
-  body: JSON.stringify({
-      email: record.getCellValueAsString("Email"),
-      full_name: record.getCellValueAsString("Email full name"),
-      email_html: record.getCellValueAsString("Email html") + tableMarkup,
-      email_picture: "https://static.tildacdn.com/tild3036-3731-4331-b837-613537663963/Screenshot_2023-12-2.png",
-      actions: actions,
-      main_title: "Подтверждение заявки на однодневную экскурсию",
-      subject: "IsraelWay team - подтверждение заявки на однодневную экскурсию",
-      id_record: record.id,
-      cc: cc,
-      tg_id: ""//record.getCellValueAsString("tg_id")
-  })
+  body: bodyString
 })
 .catch( error => {
     output.markdown("Ошибка соединения: " + error);
@@ -133,6 +139,7 @@ if (!data.result) {
     output.inspect(data);
     return;
 }
+console.log(data);
 
 await singleRequests.updateRecordAsync(record, {
     '(auto) дата отправки подтверждения': new Date(),

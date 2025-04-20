@@ -72,156 +72,156 @@ def verify_token(token):
         return False
 
 
-@app.route("/welcome", methods=['POST'])
-@auth.login_required
-def welcome():
-    try:
-        air_request = AirtableRequest(request, ["email_html", "preferred_dates"])
-        logging.getLogger('root').info("Welcome email to " + air_request.email)
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(template_name="welcome.html",
-                            full_name=air_request.full_name,
-                            id_record=air_request.id_record,
-                            email_html=air_request.email_html,
-                            first_questions_link=Settings.first_questions_link(),
-                            preferred_dates=air_request.preferred_dates)
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
-
-
-@app.route("/anketa/masa", methods=['POST'])
-@auth.login_required
-def send_anketa():
-    try:
-        air_request = AirtableRequest(request, ["email_html", "anketa_id"])
-        logging.getLogger('root').info("Anketa to " + air_request.email)
-
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    anketa_link = Settings.masa_form() + "/" + air_request.anketa_id
-    mail_html = render_mail(template_name="anketa.html",
-                            full_name=air_request.full_name,
-                            anketa_link=anketa_link,
-                            email_html=air_request.email_html,
-                            id_record=air_request.id_record)
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/welcome", methods=['POST'])
+# @auth.login_required
+# def welcome():
+#     try:
+#         air_request = AirtableRequest(request, ["email_html", "preferred_dates"])
+#         logging.getLogger('root').info("Welcome email to " + air_request.email)
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(template_name="welcome.html",
+#                             full_name=air_request.full_name,
+#                             id_record=air_request.id_record,
+#                             email_html=air_request.email_html,
+#                             first_questions_link=Settings.first_questions_link(),
+#                             preferred_dates=air_request.preferred_dates)
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/plan", methods=['POST'])
-@auth.login_required
-def send_plan():
-    try:
-        air_request = AirtableRequest(request, ["target", "email_html"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="plan.html",
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        details_form_link=Settings.details_form())
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
-
-
-@app.route("/invitation-letter", methods=['POST'])
-@auth.login_required
-def invitation_letter():
-    try:
-        air_request = AirtableRequest(request, ["invitation_url", "email_html", "consul_info"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="invitation-letter.html",
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        consul_date_form_url=Settings.consul_date_form(),
-        consul_info=air_request.consul_info,
-        invitation_url=air_request.invitation_url,
-        consul_confirm_form_url=Settings.consul_confirm_form()
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/anketa/masa", methods=['POST'])
+# @auth.login_required
+# def send_anketa():
+#     try:
+#         air_request = AirtableRequest(request, ["email_html", "anketa_id"])
+#         logging.getLogger('root').info("Anketa to " + air_request.email)
+#
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     anketa_link = Settings.masa_form() + "/" + air_request.anketa_id
+#     mail_html = render_mail(template_name="anketa.html",
+#                             full_name=air_request.full_name,
+#                             anketa_link=anketa_link,
+#                             email_html=air_request.email_html,
+#                             id_record=air_request.id_record)
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/report-ua", methods=['POST'])
-@auth.login_required
-def send_report_ua():
-    try:
-        air_request = AirtableRequest(request, ["report_ua_url", "email_html"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="report-ua.html",
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        report_ua_url=air_request.report_ua_url,
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/plan", methods=['POST'])
+# @auth.login_required
+# def send_plan():
+#     try:
+#         air_request = AirtableRequest(request, ["target", "email_html"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="plan.html",
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         details_form_link=Settings.details_form())
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/agreement", methods=['POST'])
-@auth.login_required
-def agreement():
-    try:
-        air_request = AirtableRequest(request, ["email_picture", "agreement_text_url", "fill_agreement_url"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
+# @app.route("/invitation-letter", methods=['POST'])
+# @auth.login_required
+# def invitation_letter():
+#     try:
+#         air_request = AirtableRequest(request, ["invitation_url", "email_html", "consul_info"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="invitation-letter.html",
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         consul_date_form_url=Settings.consul_date_form(),
+#         consul_info=air_request.consul_info,
+#         invitation_url=air_request.invitation_url,
+#         consul_confirm_form_url=Settings.consul_confirm_form()
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
-    mail_html = render_mail(
-        template_name="agreement.html",
-        email_picture=air_request.email_picture,
-        agreement_text_url=air_request.agreement_text_url,
-        fill_agreement_url=air_request.fill_agreement_url,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        upload_agreement_form=Settings.upload_agreement_form()
-    )
 
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/report-ua", methods=['POST'])
+# @auth.login_required
+# def send_report_ua():
+#     try:
+#         air_request = AirtableRequest(request, ["report_ua_url", "email_html"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="report-ua.html",
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         report_ua_url=air_request.report_ua_url,
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/medblank", methods=['POST'])
-@auth.login_required
-def medblank():
-    try:
-        air_request = AirtableRequest(request, ["email_picture"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
+# @app.route("/agreement", methods=['POST'])
+# @auth.login_required
+# def agreement():
+#     try:
+#         air_request = AirtableRequest(request, ["email_picture", "agreement_text_url", "fill_agreement_url"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="agreement.html",
+#         email_picture=air_request.email_picture,
+#         agreement_text_url=air_request.agreement_text_url,
+#         fill_agreement_url=air_request.fill_agreement_url,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         upload_agreement_form=Settings.upload_agreement_form()
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
-    mail_html = render_mail(
-        template_name="medblank.html",
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        upload_medblank_url=Settings.upload_medblank_form()
-    )
 
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/medblank", methods=['POST'])
+# @auth.login_required
+# def medblank():
+#     try:
+#         air_request = AirtableRequest(request, ["email_picture"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="medblank.html",
+#         email_picture=air_request.email_picture,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         upload_medblank_url=Settings.upload_medblank_form()
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
 @app.route("/anketa/zalogs", methods=['POST'])
@@ -245,139 +245,118 @@ def anketa_zalogs():
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/payment-email", methods=['POST'])
-@auth.login_required
-def payment_email():
-    try:
-        air_request = AirtableRequest(request, ["email_html", "email_picture"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="payment.html",
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        upload_payment_url=Settings.upload_payment_form()
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
-
-
-@app.route("/avia-dates", methods=['POST'])
-@auth.login_required
-def avia_dates():
-    try:
-        air_request = AirtableRequest(request, ["avia_dates"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="avia-dates.html",
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        avia_dates=air_request.avia_dates,
-        upload_tickets_url=Settings.upload_tickets_form(),
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/payment-email", methods=['POST'])
+# @auth.login_required
+# def payment_email():
+#     try:
+#         air_request = AirtableRequest(request, ["email_html", "email_picture"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="payment.html",
+#         email_picture=air_request.email_picture,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         upload_payment_url=Settings.upload_payment_form()
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/living-request", methods=['POST'])
-@auth.login_required
-def living_request():
-    try:
-        air_request = AirtableRequest(request)
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="living.html",
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        living_form_url=Settings.living_form(),
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
-
-
-@app.route("/support-action", methods=['POST'])
-@auth.login_required
-def support_action():
-    try:
-        air_request = AirtableRequest(request, ["support_action"], ["id_record"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="support-action.html",
-        support_action=air_request.support_action,
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=markdown.markdown(air_request.email_html),
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/avia-dates", methods=['POST'])
+# @auth.login_required
+# def avia_dates():
+#     try:
+#         air_request = AirtableRequest(request, ["avia_dates"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="avia-dates.html",
+#         email_picture=air_request.email_picture,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         avia_dates=air_request.avia_dates,
+#         upload_tickets_url=Settings.upload_tickets_form(),
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/onward-check-results", methods=['POST'])
-@auth.login_required
-def onward_check_results():
-    try:
-        air_request = AirtableRequest(request, ["reasons", "is_passed"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="onward-check-results.html",
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        is_passed=air_request.is_passed,
-        email_html=air_request.email_html,
-        reasons=air_request.reasons,
-        onward_docs_url=Settings.onward_docs_form(),
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/living-request", methods=['POST'])
+# @auth.login_required
+# def living_request():
+#     try:
+#         air_request = AirtableRequest(request)
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="living.html",
+#         email_picture=air_request.email_picture,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         living_form_url=Settings.living_form(),
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/onward-docs", methods=['POST'])
-@auth.login_required
-def onward_docs():
-    try:
-        air_request = AirtableRequest(request, ["email_html", "email_picture"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
 
-    mail_html = render_mail(
-        template_name="onward-docs.html",
-        email_picture=air_request.email_picture,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html,
-        onward_docs_url=Settings.onward_docs_form(),
-    )
+# @app.route("/onward-check-results", methods=['POST'])
+# @auth.login_required
+# def onward_check_results():
+#     try:
+#         air_request = AirtableRequest(request, ["reasons", "is_passed"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="onward-check-results.html",
+#         email_picture=air_request.email_picture,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         is_passed=air_request.is_passed,
+#         email_html=air_request.email_html,
+#         reasons=air_request.reasons,
+#         onward_docs_url=Settings.onward_docs_form(),
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+# @app.route("/onward-docs", methods=['POST'])
+# @auth.login_required
+# def onward_docs():
+#     try:
+#         air_request = AirtableRequest(request, ["email_html", "email_picture"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="onward-docs.html",
+#         email_picture=air_request.email_picture,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html,
+#         onward_docs_url=Settings.onward_docs_form(),
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
 MAX_TOTAL_ATTACHMENT_SIZE=20*1024*1024
@@ -420,6 +399,39 @@ def prepare_attachments(attachments):
     return files if files else None
 
 
+@app.route("/support-action", methods=['POST'])
+@auth.login_required
+def support_action():
+    try:
+        air_request = AirtableRequest(request, ["support_action"], ["id_record"])
+    except Exception as e:
+        return DetailedResponse(result=False, message=str(e),
+                                payload=request.get_json()).__dict__
+
+    mail_html = render_mail(
+        template_name="support-action.html",
+        support_action=air_request.support_action,
+        email_picture=air_request.email_picture,
+        full_name=air_request.full_name,
+        id_record=air_request.id_record,
+        email_html=markdown.markdown(air_request.email_html),
+    )
+
+    attachments = None
+    if hasattr(air_request, "attachments") and len(air_request.attachments) > 0:
+        try:
+            attachments = prepare_attachments(air_request.attachments)
+        except Exception as e:
+            send_telegram_message(Settings.admin_id(), f"⚠️ Не удалось получить вложения: {e}")
+
+    try:
+        mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html, attachments=attachments)
+    except Exception as e:
+        mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+
+    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
 @app.route("/send-email", methods=['POST'])
 @auth.login_required
 def send_email():
@@ -436,7 +448,8 @@ def send_email():
         full_name=air_request.full_name,
         id_record=air_request.id_record,
         actions=air_request.actions,
-        main_title=air_request.main_title
+        main_title=air_request.main_title,
+        email=air_request.email
     )
 
     attachments = None

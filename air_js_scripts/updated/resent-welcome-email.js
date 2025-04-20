@@ -10,14 +10,24 @@ for (let server of servers.records) {
    }
 }
 if (!host || !token) {
-    console.log("Не задан доступ до сервера");
+    output.markdown("Не задан доступ до сервера");
     return;
 }
-console.log("Connecting to: " + host);
+output.markdown("Connecting to: " + host);
 // end server access
 
+
+output.markdown("Повторная отправка Welcome email")
+let leads = base.getTable("Leads");
+let record = await input.recordAsync('',leads).catch()
+
+if (!record) {
+    output.markdown("Запись на найдена, напишите Илюше");
+    return;
+}
+
+
 // предпочтительные даты
-let inputConfig = input.config();
 let preferred_dates =
     base.getTable("Leads").getField("prefer_dates").options.choices.map(option => option.name).join(", ");
 
@@ -32,25 +42,35 @@ for (let template of email_templates.records) {
    }
 }
 
+let actions = {
+    "bottom" : {
+        "link": record.getCellValueAsString("link_to_form_from_welcome_email"),
+        "text": "Заполнить"
+    }
+};
+
+
 // запрос
-let response = await fetch(host + '/welcome', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
       "Content-Type": "application/json"
   },
   body: JSON.stringify({
-      email: inputConfig.email,
+      email: record.getCellValueAsString("Email"),
+      full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
-      full_name: inputConfig.full_name,
-      id_record: inputConfig.id_record,
-      preferred_dates: preferred_dates,
-      tg_id: inputConfig.tg_id,
+      actions: actions,
+      main_title: "Привет, " + record.getCellValueAsString("Info") + "!",
+      subject: "IsraelWay team - Welcome!",
+      id_record: record.id,
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
-    console.log("Ошибка соединения: " + error);
-    console.log(error)
+    output.markdown("Ошибка соединения: " + error);
+    output.inspect(error)
 });
 
 // Response
@@ -61,8 +81,7 @@ if (!data.result) {
     return;
 }
 
-let leads = base.getTable("Leads");
-await leads.updateRecordAsync(inputConfig.id_record, {
+await leads.updateRecordAsync(record.id, {
     '(auto) дата отправки welcome email': new Date(),
 });
 

@@ -118,8 +118,33 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
+let link_to_sign_form = fill_agreement_url + "?" + prefill_uri.map(encodeURI).join("&");
+
+
+let actions = {
+    "top" : {
+        "link": link_to_sign_form,
+        "text": "Подписать договор"
+    },
+    "bottom" : {
+        "link": record.getCellValueAsString("link_to_upload_signed_agreement"),
+        "text": "Загрузить подписанный договор"
+    }
+};
+
+let agreement_text = record.getCellValue("Текст договора");
+let files = [];
+if (agreement_text) {
+    for (let file of agreement_text) {
+        files.push({
+            filename: file.filename,
+            url: file.url
+        });
+    }
+}
+
 // запрос
-let response = await fetch(host + '/agreement', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -129,11 +154,13 @@ let response = await fetch(host + '/agreement', {
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
+      main_title: "Договор",
+      subject: "IsraelWay team - договор!",
+      actions: actions,
       email_picture: email_picture,
       id_record: record.id,
-      agreement_text_url: record.getCellValueAsString("Ссылка на просмотр текста договора"),
-      fill_agreement_url: fill_agreement_url + "?" + prefill_uri.join("&"),
-      tg_id: record.getCellValueAsString("tg_id")
+      attachments: files,
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
@@ -149,14 +176,12 @@ if (!data.result) {
     return;
 }
 
-let link = fill_agreement_url + "?" + prefill_uri.map(encodeURI).join("&");
-
 await leads.updateRecordAsync(record, {
     '(auto) договор отправлен': new Date(),
-    'Индивидуальная ссылка на договор': link
+    'Индивидуальная ссылка на договор': link_to_sign_form
 });
 
 output.clear();
 output.markdown(`### Договор успешно отправлен на подпись ${record.getCellValueAsString("Info")}`);
 output.inspect(prefill_uri_print);
-output.markdown(`## Индивидуальная ссылка на договор добавлена в соответствующее поле, а также вот [она](${link})`);
+output.markdown(`## Индивидуальная ссылка на договор добавлена в соответствующее поле, а также вот [она](${link_to_sign_form})`);

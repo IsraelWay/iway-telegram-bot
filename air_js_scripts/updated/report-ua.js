@@ -17,7 +17,7 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка приглашения")
+output.markdown("Отправка справки")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
 
@@ -31,23 +31,15 @@ if (record.getCellValueAsString("target") != "masa") {
     output.markdown("## Действие может быть только для программ Маса, сообщие Илье, что было это сообщение (лучше сделать скриншот)");
     return;
 }
-if (!record.getCellValue("Первичное интервью")) {
-    output.markdown("Первичное интервью не пройдено");
+if (!record.getCellValue("Справка консульская") || record.getCellValue("Справка консульская").length == 0) {
+    output.markdown("Сначала загрузите справку (pdf file) в соответстующую ячейку");
     return;
 }
-if (record.getCellValueAsString("consul_check") == "Пройдена") {
-    output.markdown("Проверка уже пройдена");
-    return;
-}
-if (!record.getCellValue("Приглашение") || record.getCellValue("Приглашение").length == 0) {
-    output.markdown("Сначала загрузите пришлашение (pdf file) в соответстующую ячейку");
+if (!record.getCellValue("Есть справка")) {
+    output.markdown("Сначала отметьте, что справка есть");
     return;
 }
 
-if (!record.getCellValue("Город")) {
-    output.markdown("Укажите город");
-    return;
-}
 
 // инфо по консульству
 let city = await base.getTable("Города").selectRecordAsync(record.getCellValue("Город")[0].id);
@@ -55,29 +47,21 @@ if (!city) {
     output.markdown("Не указан город, а надо в письме указать, где консульство");
     return;
 }
-let consul_info = city.getCellValueAsString("Данные по консульствам") ?
-    city.getCellValueAsString("Данные по консульствам"):
-    city.getCellValueAsString("(страна) Данные по консульствам");
 
 // тело письма
 let email_templates_base = base.getTable("Шаблоны писем");
 let email_templates = await email_templates_base.selectRecordsAsync();
 let email_html = "";
 
-let postfix = "";
-if (["Украина"].includes(city.getCellValueAsString("Страна"))) {
-    postfix += "-ua";
-}
-
 for (let template of email_templates.records) {
-   if (template.getCellValueAsString("Название письма") == "invitation-letter" + postfix) {
+   if (template.getCellValueAsString("Название письма") == "report-ua") {
        email_html = template.getCellValueAsString("Html");
        break;
    }
 }
 
 output.clear();
-output.markdown(`## Отправка приглашения для ${record.name} из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+output.markdown(`## Отправка справки для ${record.name} из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
 
 let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
@@ -92,8 +76,19 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
+let spravka = record.getCellValue("Справка консульская");
+let files = [];
+if (spravka) {
+    for (let file of spravka) {
+        files.push({
+            filename: file.filename,
+            url: file.url
+        });
+    }
+}
+
 // запрос
-let response = await fetch(host + '/invitation-letter', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -103,10 +98,12 @@ let response = await fetch(host + '/invitation-letter', {
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
-      consul_info: consul_info,
-      invitation_url: record.getCellValueAsString("Ссылка на просмотр приглашения"),
+      main_title: "Консульская справка",
+      subject: "IsraelWay team - консульская справка!",
+      actions: {},
       id_record: record.id,
-      tg_id: record.getCellValueAsString("tg_id")
+      attachments: files,
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
@@ -123,7 +120,8 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) отправка приглашения': new Date(),
+    '(auto) справка отправлена (Украина)': new Date(),
 });
 
-output.markdown(`### Приглашение и письмо с инструкциями успешно отправлены ${record.getCellValueAsString("Info")}`);
+output.clear();
+output.markdown(`### Справка успешно отправлена ${record.getCellValueAsString("Info")}`);

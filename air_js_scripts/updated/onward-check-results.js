@@ -82,8 +82,18 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
+let actions = {};
+if (onwardCheckResult != "yes") {
+    actions = {
+        "top" : {
+            "link": record.getCellValueAsString("link_to_upload_onward_check_docs"),
+            "text": "Обновить документы"
+        }
+    }
+}
+
 // запрос
-let response = await fetch(host + '/onward-check-results', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -92,12 +102,12 @@ let response = await fetch(host + '/onward-check-results', {
   body: JSON.stringify({
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
-      email_html: email_html,
-      email_picture: email_picture,
-      reasons: reasons,
-      is_passed: onwardCheckResult == "yes",
+      email_html: email_html + reasons,
+      actions: actions,
+      main_title: "Результаты проверки Onward",
+      subject: "IsraelWay team - результаты проверки Onward",
       id_record: record.id,
-      tg_id: record.getCellValueAsString("tg_id")
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {

@@ -17,7 +17,7 @@ output.markdown("Connecting to: " + host);
 // end server access
 
 
-output.markdown("Отправка данных по оплате")
+output.markdown("Отправка медбланка")
 let leads = base.getTable("Leads");
 let record = await input.recordAsync('',leads).catch()
 
@@ -35,7 +35,7 @@ let email_html = "";
 let email_picture = ""
 
 for (let template of email_templates.records) {
-   if (template.getCellValueAsString("Название письма") == "payment-details") {
+   if (template.getCellValueAsString("Название письма") == "medblank") {
        email_html = template.getCellValueAsString("Html");
        email_picture = template.getCellValueAsString("picture_url");
        break;
@@ -43,13 +43,13 @@ for (let template of email_templates.records) {
 }
 
 output.clear();
-output.markdown(`## Отправка данных по оплате для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
+output.markdown(`## Отправка медбланка для ${record.name} (${record.getCellValueAsString("Email")}) из ${record.getCellValueAsString("Город")} ${record.getCellValueAsString("Страна (from Город)")}`)
 
 let shouldContinue = await input.buttonsAsync(
     'Отправляем?',
     [
         {label: 'Отмена', value: 'cancel', variant: 'danger'},
-        {label: 'Да, вперед', value: 'yes', variant: 'primary'},
+        {label: 'Да, вперед, отправить медбланк', value: 'yes', variant: 'primary'},
     ],
 );
 if (shouldContinue === 'cancel') {
@@ -58,8 +58,16 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
+let actions = {
+    "bottom" : {
+        "link": record.getCellValueAsString("link_to_upload_medblank"),
+        "text": "Загрузить заполненный бланк"
+    },
+};
+
+
 // запрос
-let response = await fetch(host + '/payment-email', {
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -69,15 +77,18 @@ let response = await fetch(host + '/payment-email', {
       email: record.getCellValueAsString("Email"),
       full_name: record.getCellValueAsString("Info"),
       email_html: email_html,
-      email_picture: email_picture,
+      actions: actions,
+      main_title: "Медицинский бланк",
+      subject: "IsraelWay team - медицинский бланк",
       id_record: record.id,
-      tg_id: record.getCellValueAsString("tg_id")
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
     output.markdown("Ошибка соединения: " + error);
     output.inspect(error)
 });
+
 
 // Response
 let data = await response.json();
@@ -88,8 +99,8 @@ if (!data.result) {
 }
 
 await leads.updateRecordAsync(record, {
-    '(auto) письмо про оплату отправлено': new Date(),
+    '(auto) Медбланк отправлен': new Date(),
 });
 
 output.clear();
-output.markdown(`### Данные по оплате успешно отправлены ${record.getCellValueAsString("Info")}`);
+output.markdown(`### Медбланк успешно отправлена ${record.getCellValueAsString("Info")}`);
