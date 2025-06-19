@@ -466,6 +466,9 @@ def airtable_rich_text_to_html(rich_text):
     # Ссылки [text](url)
     html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', html)
     
+    # Автоматические ссылки в угловых скобках <http://example.com>
+    html = re.sub(r'<(https?://[^>]+)>', r'<a href="\1">\1</a>', html)
+    
     # Bold и Italic (обрабатываем в правильном порядке, игнорируем экранированные)
     html = re.sub(r'(?<!\\)\*\*\*([^*]+)\*\*\*', r'<strong><em>\1</em></strong>', html)  # Bold + Italic
     html = re.sub(r'(?<!\\)\*\*([^*]+)\*\*', r'<strong>\1</strong>', html)  # Bold
