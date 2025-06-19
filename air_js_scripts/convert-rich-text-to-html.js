@@ -28,8 +28,8 @@ if (!record) {
 }
 
 // Настройки полей
-let RICH_TEXT_FIELD = "Rich Text"; // Поле с Rich Text контентом
-let HTML_FIELD = "HTML Content"; // Поле для сохранения HTML
+let RICH_TEXT_FIELD = "Текст письма"; // Поле с Rich Text контентом
+let HTML_FIELD = "Html"; // Поле для сохранения HTML
 
 output.markdown(`### 🔄 Конвертация Rich Text в HTML`);
 output.markdown(`📋 Таблица: **Шаблоны писем**`);
@@ -37,7 +37,7 @@ output.markdown(`📝 Запись: **${record.name || record.id}**`);
 output.markdown(`📝 Поле Rich Text: **${RICH_TEXT_FIELD}**`);
 output.markdown(`🌐 Поле HTML: **${HTML_FIELD}**`);
 
-let richTextContent = record.getCellValueAsString(RICH_TEXT_FIELD);
+let richTextContent = record.getCellValue(RICH_TEXT_FIELD);
 let existingHtml = record.getCellValueAsString(HTML_FIELD);
 
 // Проверяем есть ли Rich Text контент
@@ -48,9 +48,7 @@ if (!richTextContent || richTextContent.trim() === "") {
 
 // Показываем что будем конвертировать
 output.markdown(`\n📄 **Rich Text контент:**`);
-let preview = richTextContent.length > 200 ? 
-    richTextContent.substring(0, 200) + "..." : 
-    richTextContent;
+let preview = richTextContent;
 output.markdown(`\`\`\`\n${preview}\n\`\`\``);
 
 // Предупреждаем если HTML уже есть
@@ -60,7 +58,7 @@ if (existingHtml && existingHtml.trim() !== "") {
 
 try {
     output.markdown(`\n🔄 **Отправка на конвертацию...**`);
-    
+
     // Отправляем запрос на конвертацию
     let response = await fetch(host + '/convert-airtable-rich-text', {
         method: 'POST',
@@ -72,38 +70,36 @@ try {
             rich_text: richTextContent
         })
     });
-    
+
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     let data = await response.json();
-    
+
     if (!data.result) {
         throw new Error(data.message || "Ошибка конвертации");
     }
-    
+
     let htmlContent = data.payload.html;
-    
+
     // Сохраняем HTML в поле
     await templates.updateRecordAsync(record.id, {
         [HTML_FIELD]: htmlContent
     });
-    
+
     output.markdown(`\n✅ **Конвертация успешна!**`);
-    
+
     // Показываем результат
-    let htmlPreview = htmlContent.length > 300 ? 
-        htmlContent.substring(0, 300) + "..." : 
-        htmlContent;
+    let htmlPreview = htmlContent;
     output.markdown(`\n🌐 **Результирующий HTML:**`);
     output.markdown(`\`\`\`html\n${htmlPreview}\n\`\`\``);
-    
+
     output.markdown(`\n📊 **Статистика:**`);
     output.markdown(`- Исходный Rich Text: **${richTextContent.length}** символов`);
     output.markdown(`- Результирующий HTML: **${htmlContent.length}** символов`);
     output.markdown(`- Поле обновлено: **${HTML_FIELD}**`);
-    
+
 } catch (error) {
     output.markdown(`\n❌ **Ошибка конвертации**: ${error.message}`);
     output.markdown(`\nПроверьте:`);
@@ -137,4 +133,4 @@ output.markdown(`\`\`\`
 - ~~Зачеркнутый~~ текст
 [x] Выполненная задача
 [ ] Невыполненная задача
-\`\`\``); 
+\`\`\``);
