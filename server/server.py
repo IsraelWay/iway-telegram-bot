@@ -550,7 +550,7 @@ def airtable_rich_text_to_html(rich_text):
     html = html.replace('\n', '<br>')
     
     # В САМОМ КОНЦЕ убираем escape-символы (backslash перед специальными символами)
-    html = re.sub(r'\\([*_~`#>\[\]\\-])', r'\1', html)
+    html = re.sub(r'\\([*_~`#>\[\]\\.-])', r'\1', html)
     
     return "<p>" + html + "</p>"
 
