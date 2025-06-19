@@ -5,13 +5,15 @@ from logging.handlers import RotatingFileHandler
 
 import markdown
 import logging
+import markdown2
+import re
 
 from pprint import pprint
 
 from time import sleep
 
 import requests
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 from bot.sync_telegram_utils import send_telegram_message
 from mail import mail_service
@@ -224,25 +226,25 @@ def verify_token(token):
 #     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
-@app.route("/anketa/zalogs", methods=['POST'])
-@auth.login_required
-def anketa_zalogs():
-    try:
-        air_request = AirtableRequest(request, ["email_html", "anketa_zalog_url"])
-    except Exception as e:
-        return DetailedResponse(result=False, message=str(e),
-                                payload=request.get_json()).__dict__
-
-    mail_html = render_mail(
-        template_name="anketa_zalog.html",
-        anketa_zalog_url=air_request.anketa_zalog_url,
-        full_name=air_request.full_name,
-        id_record=air_request.id_record,
-        email_html=air_request.email_html
-    )
-
-    mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
-    return DetailedResponse(result=True, message="Email sent successfully").__dict__
+# @app.route("/anketa/zalogs", methods=['POST'])
+# @auth.login_required
+# def anketa_zalogs():
+#     try:
+#         air_request = AirtableRequest(request, ["email_html", "anketa_zalog_url"])
+#     except Exception as e:
+#         return DetailedResponse(result=False, message=str(e),
+#                                 payload=request.get_json()).__dict__
+#
+#     mail_html = render_mail(
+#         template_name="anketa_zalog.html",
+#         anketa_zalog_url=air_request.anketa_zalog_url,
+#         full_name=air_request.full_name,
+#         id_record=air_request.id_record,
+#         email_html=air_request.email_html
+#     )
+#
+#     mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
+#     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 
 
 # @app.route("/payment-email", methods=['POST'])
@@ -430,6 +432,179 @@ def support_action():
         mail_service.send(to=air_request.email, name=air_request.full_name, content=mail_html)
 
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
+
+
+def airtable_rich_text_to_html(rich_text):
+    """
+    Конвертирует Airtable Rich Text в HTML.
+    Поддерживает элементы Rich Text полей Airtable:
+    - Заголовки (# ## ###)
+    - Ненумерованные списки (- *)
+    - Нумерованные списки (1. 2.)
+    - Цитаты (>)
+    - Инлайн код (`code`)
+    - Блоки кода (```)
+    - Ссылки ([text](url))
+    - Чекбоксы ([x] [ ])
+    - Bold (**text**)
+    - Italic (*text*)
+    - Strikethrough (~~text~~)
+    """
+    if not rich_text:
+        return ""
+    
+    html = rich_text
+    
+    # Заголовки
+    html = re.sub(r'^### (.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    html = re.sub(r'^## (.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^# (.+)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+    
+    # Цитаты (обрабатываем до ссылок, чтобы ссылки внутри цитат работали)
+    html = re.sub(r'^> (.+)$', r'<blockquote>\1</blockquote>', html, flags=re.MULTILINE)
+    
+    # Ссылки [text](url)
+    html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', html)
+    
+    # Bold и Italic (обрабатываем в правильном порядке, игнорируем экранированные)
+    html = re.sub(r'(?<!\\)\*\*\*([^*]+)\*\*\*', r'<strong><em>\1</em></strong>', html)  # Bold + Italic
+    html = re.sub(r'(?<!\\)\*\*([^*]+)\*\*', r'<strong>\1</strong>', html)  # Bold
+    html = re.sub(r'(?<!\\)(?<!\*)\*([^*]+)\*(?!\*)', r'<em>\1</em>', html)  # Italic
+    
+    # Также поддерживаем альтернативный синтаксис для Bold и Italic
+    html = re.sub(r'___([^_]+)___', r'<strong><em>\1</em></strong>', html)  # Bold + Italic
+    html = re.sub(r'__([^_]+)__', r'<strong>\1</strong>', html)  # Bold
+    html = re.sub(r'(?<!_)_([^_]+)_(?!_)', r'<em>\1</em>', html)  # Italic
+    
+    # Strikethrough
+    html = re.sub(r'~~([^~]+)~~', r'<del>\1</del>', html)
+    
+    # Инлайн код (обрабатываем после Bold/Italic чтобы не конфликтовать)
+    html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
+    
+    # Блоки кода
+    html = re.sub(r'```([^`]*)```', r'<pre><code>\1</code></pre>', html, flags=re.DOTALL)
+    
+    # Чекбоксы и списки - обрабатываем построчно
+    lines = html.split('\n')
+    in_list = False
+    in_ordered_list = False
+    processed_lines = []
+    
+    for line in lines:
+        # Чекбоксы
+        if re.match(r'^\s*\[x\]\s+(.+)$', line, re.IGNORECASE):
+            if not in_list:
+                processed_lines.append('<ul>')
+                in_list = True
+            item_text = re.sub(r'^\s*\[x\]\s+(.+)$', r'\1', line, flags=re.IGNORECASE)
+            processed_lines.append(f'<li>✅ {item_text}</li>')
+        elif re.match(r'^\s*\[\s*\]\s+(.+)$', line):
+            if not in_list:
+                processed_lines.append('<ul>')
+                in_list = True
+            item_text = re.sub(r'^\s*\[\s*\]\s+(.+)$', r'\1', line)
+            processed_lines.append(f'<li>☐ {item_text}</li>')
+        # Обычные ненумерованные списки
+        elif re.match(r'^\s*[-*]\s+(.+)$', line):
+            if in_ordered_list:
+                processed_lines.append('</ol>')
+                in_ordered_list = False
+            if not in_list:
+                processed_lines.append('<ul>')
+                in_list = True
+            item_text = re.sub(r'^\s*[-*]\s+(.+)$', r'\1', line)
+            processed_lines.append(f'<li>{item_text}</li>')
+        # Нумерованные списки
+        elif re.match(r'^\s*\d+\.\s+(.+)$', line):
+            if in_list:
+                processed_lines.append('</ul>')
+                in_list = False
+            if not in_ordered_list:
+                processed_lines.append('<ol>')
+                in_ordered_list = True
+            item_text = re.sub(r'^\s*\d+\.\s+(.+)$', r'\1', line)
+            processed_lines.append(f'<li>{item_text}</li>')
+        else:
+            # Закрываем списки если нужно
+            if in_list:
+                processed_lines.append('</ul>')
+                in_list = False
+            if in_ordered_list:
+                processed_lines.append('</ol>')
+                in_ordered_list = False
+            processed_lines.append(line)
+    
+    # Закрываем незакрытые списки
+    if in_list:
+        processed_lines.append('</ul>')
+    if in_ordered_list:
+        processed_lines.append('</ol>')
+    
+    html = '\n'.join(processed_lines)
+    
+    # Переносы строк в <br>
+    html = html.replace('\n', '<br>')
+    
+    # В САМОМ КОНЦЕ убираем escape-символы (backslash перед специальными символами)
+    html = re.sub(r'\\([*_~`#>\[\]\\-])', r'\1', html)
+    
+    return "<p>" + html + "</p>"
+
+
+@app.route("/convert-airtable-rich-text", methods=['POST'])
+@auth.login_required
+def convert_airtable_rich_text():
+    """
+    Конвертирует Airtable Rich Text в HTML.
+    
+    Поддерживает:
+    - Заголовки: # ## ###
+    - Списки: - * 1. 2.
+    - Чекбоксы: [x] [ ]
+    - Цитаты: >
+    - Ссылки: [text](url)
+    - Форматирование: **bold** *italic* ~~strike~~
+    - Код: `inline` и ``` блоки ```
+    
+    Принимает JSON:
+    {
+        "rich_text": "# Heading 1\\n> Learn more with this [hyperlink](https://example.com)\\n- **Bold** and *italic* text\\n[x] Completed task"
+    }
+    
+    Возвращает:
+    {
+        "result": true,
+        "payload": {
+            "html": "<h1>Heading 1</h1><br><blockquote>Learn more with this <a href=\"https://example.com\">hyperlink</a></blockquote><br><ul><li><strong>Bold</strong> and <em>italic</em> text</li></ul><br><ul><li>✅ Completed task</li></ul>"
+        },
+        "message": "Converted successfully"
+    }
+    """
+    try:
+        data = request.json
+        rich_text = data.get("rich_text", "")
+        
+        if not rich_text:
+            return DetailedResponse(
+                result=False, 
+                message="Параметр 'rich_text' пустой или отсутствует"
+            ).__dict__
+
+        html = airtable_rich_text_to_html(rich_text)
+
+        return DetailedResponse(
+            result=True,
+            payload={"html": html},
+            message="Converted successfully"
+        ).__dict__
+
+    except Exception as e:
+        logging.getLogger('root').error(f"Error converting rich text: {e}")
+        return DetailedResponse(
+            result=False,
+            message=f"Ошибка конвертации: {str(e)}"
+        ).__dict__
 
 
 @app.route("/send-email", methods=['POST'])

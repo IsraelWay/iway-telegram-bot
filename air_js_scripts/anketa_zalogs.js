@@ -26,6 +26,25 @@ if (!record) {
     return;
 }
 
+let deposit_refund_id = null;
+let deposit_refunds = record.getCellValue("Анкета на залоги");
+let deposit_refund_table = base.getTable("Анкета на залоги");
+if (!deposit_refunds) {
+    deposit_refund_id = await deposit_refund_table.createRecordAsync({
+        'Участник': [{id: record.id}],
+    });
+}
+else {
+    deposit_refund_id = deposit_refunds[0].id;
+}
+
+let deposit_refund_obj = await deposit_refund_table.selectRecordAsync(deposit_refund_id);
+if (!deposit_refund_obj) {
+    output.clear();
+    output.markdown("## Не найден объект анкеты на залоги для " + record.getCellValueAsString("Info"));
+    return;
+}
+
 // тело письма
 let email_templates_base = base.getTable("Шаблоны писем");
 let email_templates = await email_templates_base.selectRecordsAsync();
@@ -57,7 +76,16 @@ if (shouldContinue === 'cancel') {
     return;
 }
 
-let response = await fetch(host + '/anketa/zalogs', {
+let actions = {
+    "bottom" : {
+        "link": deposit_refund_obj.getCellValueAsString("link_to_from"),
+        "text": "Заполнить анкету"
+    },
+};
+
+
+// запрос
+let response = await fetch(host + '/send-email', {
   method: 'POST',
   headers: {
       "Authorization": 'Bearer ' + token,
@@ -65,17 +93,21 @@ let response = await fetch(host + '/anketa/zalogs', {
   },
   body: JSON.stringify({
       email: record.getCellValueAsString("Email"),
-      full_name: record.getCellValueAsString("Имя участника"),
-      anketa_zalog_url: record.getCellValueAsString("Анкета залоги ссылка"),
+      full_name: record.getCellValueAsString("Имя + инфо"),
       email_html: email_html,
+      email_picture: "https://static.tildacdn.com/tild6631-3136-4364-a433-646365623737/download.jpg",
+      actions: actions,
+      main_title: "Анкета на залоги",
+      subject: "IsraelWay team - анкета залоги",
       id_record: record.id,
-      tg_id: "tg_id"
+      tg_id: ""//record.getCellValueAsString("tg_id")
   })
 })
 .catch( error => {
     output.markdown("Ошибка соединения: " + error);
     output.inspect(error)
 });
+
 
 // Response
 let data = await response.json();
