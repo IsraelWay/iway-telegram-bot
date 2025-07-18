@@ -75,8 +75,12 @@ let participantNumber = record.getCellValue("Номер в группе");
 let startDate = formatDate(program.getCellValue("Start date"));
 let endDate = formatDate(program.getCellValue("End date"));
 let dateRange = startDate && endDate ? `${startDate} - ${endDate}` : null;
-let diplomaText = template.getCellValue("Текст диплома");
+let personalDiplomaText = record.getCellValue("Personal diploma text");
+let diplomaText = personalDiplomaText ? personalDiplomaText : template.getCellValue("Текст диплома");
 let printLink = template.getCellValue("Ссылка на печать диплома");
+
+console.log(program.getCellValue("Start date"), startDate);
+console.log(program.getCellValue("End date"), endDate);
 
 // Проверка данных
 let missingFields = [];
