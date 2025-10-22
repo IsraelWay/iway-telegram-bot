@@ -19,7 +19,7 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
     to = [{"email": to, "name": name}]
     bcc = [{"email": "info@israelway.ru", "name": "IsraelWay Info"}]
 
-    _cc = [{"email": "info@israelway.ru", "name": "IsraelWay info"}]
+    _cc = [{"email": "team@israelway.ru", "name": "IsraelWay team"}]
     try:
         if cc:
             _cc.append({"email": cc, "name": "IsraelWay copy"})
