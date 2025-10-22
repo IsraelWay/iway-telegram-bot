@@ -17,7 +17,7 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
     html_content = content
     sender = {"name": "IsraelWay Team", "email": "team@israelway.ru"}
     to = [{"email": to, "name": name}]
-    bcc = [{"email": "no-reply@israelway.ru", "name": "mail-logs"}]
+    bcc = [{"email": "info@israelway.ru", "name": "IsraelWay Info"}]
     cc = [{"email": cc, "name": "IsraelWay copy"}] if cc else None
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=html_content, sender=sender, subject=subject,
                                                    tags=_tags, bcc=bcc, cc=cc, attachment=attachments)
