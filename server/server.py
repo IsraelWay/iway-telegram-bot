@@ -20,6 +20,7 @@ from mail import mail_service
 from mail.mail_service import render_mail
 from flask_httpauth import HTTPTokenAuth
 
+from server.airtable_data import data_blueprint
 from server.iway_requests import AirtableRequest, ChangeStatusRequest
 from server.iway_responses import DetailedResponse
 from settings import Settings
@@ -43,6 +44,7 @@ def set_logger():
 # Start
 #
 app = Flask("Flask")
+app.register_blueprint(data_blueprint, url_prefix='/data')
 CORS(app, resources={r"*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 

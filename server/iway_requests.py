@@ -4,6 +4,7 @@ import logging
 import requests
 
 from bot.sync_telegram_utils import send_telegram_message
+from server.model.ProgramInfo import ProgramInfo
 from settings import Settings
 
 
@@ -194,3 +195,38 @@ class ChangeStatusRequest:
         self.errors.append(response.text)
         send_telegram_message(Settings.admin_id(), f"Airtable error: {response.text}")
         return False
+    
+
+class GetAvailableProgramsRequest():
+
+    def apply(self) -> list[ProgramInfo]:
+        base_id = Settings.airtable_base_id()
+        table_name = Settings.airtable_programs_template_table_id()
+        api_key = Settings.airtable_api_key()
+
+        url = f"https://api.airtable.com/v0/{base_id}/{table_name}/listRecords"
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "fields": ["Официальное название", "Город", "Type"]  # hardcoded fields
+        }
+
+        response = requests.post(url, json=data, headers=headers)
+
+        result = []
+        if response.status_code == 200:
+            log_message = f"Get available programs from Airtable success"
+            logging.log(logging.INFO, log_message)
+            print(log_message)
+            if "records" in response.json():
+                for record in response.json()["records"]:
+                    program = ProgramInfo.from_record(record)
+                    if program is not None and program.type is not None:
+                        result.append(program)
+        else:
+            print(response.status_code, response.text)
+        return result

@@ -6,7 +6,7 @@ load_dotenv(".env")
 
 class Settings:
 
-    IS_TEST = False
+    IS_TEST = True
 
     @staticmethod
     def airtable_api_key():
@@ -23,6 +23,14 @@ class Settings:
         except KeyError:
             from_env = None
         return from_env if from_env else "tblUyPrVrDu4k2O8w"
+    
+    @staticmethod
+    def airtable_programs_template_table_id():
+        try:
+            from_env = os.environ[f"AIRTABLE_PROGRAMS_TEMPLATE_TABLE_ID{'_TEST' if Settings.IS_TEST else ''}"]
+        except KeyError:
+            from_env = None
+        return from_env if from_env else "tblNnMW6ABLUZjyZV"
 
     @staticmethod
     def airtable_base_id():
