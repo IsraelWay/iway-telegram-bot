@@ -19,7 +19,7 @@ _programs_cache = {
 def get_programs():
     type = request.args.get('type')
     if not _programs_cache['data']:
-        refresh_programs()
+        refresh_programs_dict()
     filtered = filter(lambda p: type is None or p["type"] == type, _programs_cache['data'])
     result = {
         'programs': list(filtered)
