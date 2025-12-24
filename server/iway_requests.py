@@ -230,3 +230,93 @@ class GetAvailableProgramsRequest():
         else:
             print(response.status_code, response.text)
         return result
+    
+
+
+class RegisterUserRequest():
+    def __init__(self, request_data):
+        if "first_name" in request_data:
+            self.first_name = request_data.get("first_name")
+        else:
+            raise Exception("No required param first_name")
+        
+        if "last_name" in request_data:
+            self.last_name = request_data.get("last_name")
+        else:
+            raise Exception("No required param last_name")
+
+        if "email" in request_data:
+            self.email = request_data.get('email')
+        else:
+            raise Exception("No required param email")
+        
+        if "phone_number" in request_data:
+            self.phone_number = request_data.get("phone_number")
+        else:
+            raise Exception("No required param phone_number")
+        if "telegram_id" in request_data:
+            self.telegram_id = request_data.get("telegram_id")
+        else:
+            raise Exception("No required param telegram_id")
+        
+        if "privacy_policy_agreed" in request_data:
+            self.privacy_policy_agreed = request_data.get("privacy_policy_agreed")
+        else:
+            raise Exception("No required param privacy_policy_agreed")
+
+        self.comment = request_data.get("comment", "")
+        self.preferred_programs = request_data.get("preferred_programs")
+
+        self.utm_source = request_data.get("utm_source", "-")
+        self.utm_medium = request_data.get("utm_medium", "-")
+        self.utm_campaign = request_data.get("utm_campaign", "-")
+        self.utm_term = request_data.get("utm_term", "-")
+        self.utm_content = request_data.get("utm_content", "-")
+        self.referral = request_data.get("referral", ["rec0gTSCLKXCn574m"])
+        self.target_program = request_data.get("target", "masa")
+        self.status = request_data.get("status", "selv3n3t53Wj1E6dk")  # default to "send mail"
+
+    def apply(self) -> bool:
+        base_id = Settings.airtable_base_id()
+        table_name = Settings.airtable_leads_table_id()
+        api_key = Settings.airtable_api_key()
+
+        url = f"https://api.airtable.com/v0/{base_id}/{table_name}"
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "fields": {
+                "fld8x1yJ12pZjWx1I": self.first_name, # first name
+                "fldv5IFComRn6ycqk": self.last_name, # last name
+                "fldszilmfq49ufVKu": self.email, # email
+                "fld315yUKT5quZHxh": self.comment, # comment
+                "fldknTXNnUaZEbcKi": self.preferred_programs, # preferred programs
+                "fldsMrXJVTiYrKGmd": self.phone_number, # phone number
+                "fldZkOY9uCnZgwfCw": self.telegram_id, # telegram user id
+                "fldGKDhJLTtvc7ZUb": self.status, # status
+                "fldMhwygfz5i67tm6": self.utm_source, # utm_source
+                "fld00Twy2CejsX8L9": self.utm_medium, # utm_medium,
+                "fldjsyWSsk9GofHtf": self.utm_campaign, # utm_campaign
+                "fldtHIPrGlW2166eW": self.utm_term, # utm_term
+                "fldEZAPzbfYodw8JN": self.utm_content, # utm_content
+                "fldMdNTNvtsTllAAr": self.target_program, # target program,
+                "fldFNAV2opllZWgxK": self.privacy_policy_agreed, # privacy policy agreed
+                "fldjDnFCeNJU4ywgf": self.referral # referral
+            }
+        }
+
+        print("RegisterUserRequest data:", data)
+
+        response = requests.post(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+            log_message = f"Successfully registered new user {self.first_name} {self.last_name} ({self.email}) in Airtable"
+            logging.log(logging.INFO, log_message)
+            print(log_message)
+        else:
+            print(response.status_code, response.text)
+        return response.status_code == 200

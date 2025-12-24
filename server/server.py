@@ -44,7 +44,7 @@ def set_logger():
 # Start
 #
 app = Flask("Flask")
-app.register_blueprint(data_blueprint, url_prefix='/data')
+app.register_blueprint(data_blueprint, url_prefix='/api/data')
 CORS(app, resources={r"*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 

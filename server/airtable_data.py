@@ -3,6 +3,9 @@ from flask import jsonify, Blueprint, request
 from flask_httpauth import HTTPTokenAuth
 from server import iway_requests
 import logging
+import re
+
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 data_blueprint = Blueprint('data', __name__)
 auth = HTTPTokenAuth(scheme='Bearer', header='Authorization')
@@ -29,7 +32,7 @@ def get_programs():
 @auth.login_required
 def refresh_programs():
     try:
-        refresh_programs()
+        refresh_programs_dict()
         return jsonify({
             "result": True,
             "message": f"Cache refreshed successfully",
@@ -43,7 +46,29 @@ def refresh_programs():
             "message": f"Failed to refresh cache: {str(e)}"
         }), 500
 
-def refresh_programs():
+def refresh_programs_dict():
     list_of_programs = iway_requests.GetAvailableProgramsRequest().apply()
     _programs_cache['data'] = [program.to_dict() for program in list_of_programs]
     logging.getLogger('root').info(f"Cache initialized with {len(list_of_programs)} programs")
+
+@data_blueprint.route('/register', methods=['POST'])
+def add_new_record():
+    data = request.form or request.get_json()
+    try:
+        air_request = iway_requests.RegisterUserRequest(data)
+        result = air_request.apply()
+        if not result:
+            return jsonify({
+                "result": False,
+                "message": "Failed to register user"
+            }), 500
+        return jsonify({
+            "result": True,
+            "message": "User registered successfully"
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "result": False,
+            "message": f"Invalid data: {str(e)}"
+        }), 400
+    
