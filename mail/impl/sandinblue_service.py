@@ -15,11 +15,11 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = subject  # "Hi there! This is IsraelWay."
     html_content = content
-    sender = {"name": "IsraelWay Team", "email": "team@israelway.ru"}
+    sender = {"name": "IsraelWay Team", "email": "info@israelway.com"}
     to = [{"email": to, "name": name}]
-    bcc = [{"email": "info@israelway.ru", "name": "IsraelWay Info"}]
+    # bcc = [{"email": "info@israelway.com", "name": "IsraelWay Info"}]
 
-    _cc = [{"email": "team@israelway.ru", "name": "IsraelWay team"}]
+    _cc = [{"email": "info@israelway.com", "name": "IsraelWay team"}]
     try:
         if cc:
             _cc.append({"email": cc, "name": "IsraelWay copy"})
@@ -27,7 +27,7 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
         print("Error on cc in email: %s\n" % e)
 
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=html_content, sender=sender, subject=subject,
-                                                   tags=_tags, bcc=bcc, cc=_cc, attachment=attachments)
+                                                   tags=_tags, cc=_cc, attachment=attachments)
     try:
         api_response = api_instance.send_transac_email(send_smtp_email)
         pprint(api_response)
