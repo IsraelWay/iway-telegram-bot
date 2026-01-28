@@ -773,12 +773,9 @@ class CalendarEventsWithSubjectsRequest:
         columns_to_drop = ['subject', 'subject_id', 'teacher_id', 'id_subject', 'id_teacher', 'teacher_id_extracted']
         events_df.drop(columns=[col for col in columns_to_drop if col in events_df.columns], inplace=True)
         
-        # Replace all NaN with None at DataFrame level
-        import numpy as np
-        for col in events_df.columns:
-            events_df[col] = events_df[col].apply(
-                lambda x: None if (isinstance(x, float) and np.isnan(x)) else x
-            )
+        # Replace all NaN with None at DataFrame level - use replace with None
+        events_df = events_df.replace({pd.NA: None, pd.NaT: None})
+        events_df = events_df.where(pd.notna(events_df), None)
         
         logging.info(f"Processed {len(events_df)} events with subjects and teachers")
         return events_df
