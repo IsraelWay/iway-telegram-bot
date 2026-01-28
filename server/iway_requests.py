@@ -364,18 +364,42 @@ class RegisterUserRequest:
 class CalendarEventInfoRequest:
     """Request to get calendar event information from Airtable."""
     
-    # Field mapping for calendar events
-    FIELD_MAPPING = {
-        "fldoAhFThMUITRPDe": "date",
-        "fldj0YbUXN327CsbH": "start_time",
-        "fldxKsIvsOub8aQiv": "end_time",
-        "fldZ7fbtjgCPm235e": "event_name",
-        "fldAyvS7HCA0Rk0sr": "tags",
-        "fld31JYAs3bQDKdf1": "subject",
-        "fldpX2lGAJLsVIBnC": "address",
-        "fldG1J7zXt6lH7dnN": "description",
-        "fldcwesZdoxH7CkSk": "map_link",
-        "fldl1bRLAbitKHbSh": "files"
+    # Predefined table configurations
+    TABLE_CONFIGS = {
+        "masa": {
+            "table_id": "tblNOb28nJXsHdwrf",
+            "view": "viwY7oUkaENUDAFVf",
+            "field_mapping": {
+                "fldoAhFThMUITRPDe": "date",
+                "fldj0YbUXN327CsbH": "start_time",
+                "fldxKsIvsOub8aQiv": "end_time",
+                "fldZ7fbtjgCPm235e": "event_name",
+                "fldAyvS7HCA0Rk0sr": "tags",
+                "fld31JYAs3bQDKdf1": "subject",
+                "fldpX2lGAJLsVIBnC": "address",
+                "fldG1J7zXt6lH7dnN": "description",
+                "fldcwesZdoxH7CkSk": "map_link",
+                "fldl1bRLAbitKHbSh": "files"
+            },
+            "date_field_id": "fldoAhFThMUITRPDe"
+        },
+        "onward": {
+            "table_id": "tblcsV0OknsNj45As",
+            "view": "viwsBQJYW0jaBLy1U",
+            "field_mapping": {
+                "fldW2Jk6Hb8Xw0i0Z": "date",
+                "fldIEI9AUrynJt1kU": "start_time",
+                "fldfZiMRnsC3AJ4Gm": "end_time",
+                "fldoLZ99gU7aYTCer": "event_name",
+                "fld4IYcCYCsx0J3A0": "tags",
+                "fldsFtWgpHGbfBMoe": "subject",
+                "fldOBMjmxngNxzawP": "address",
+                "fldzrT42MddJ5SXpc": "description",
+                "fldDRhzgYDLSKigW6": "map_link",
+                "fldhGX7fxqWw3qJYo": "files"
+            },
+            "date_field_id": "fldW2Jk6Hb8Xw0i0Z"
+        }
     }
     
     def __init__(self, request_data: Dict[str, Any]):
@@ -383,9 +407,27 @@ class CalendarEventInfoRequest:
         Initialize calendar event info request.
         
         Args:
-            request_data: Dictionary with request parameters
+            request_data: Dictionary with request parameters. Can include:
+                - type: Name of predefined configuration (e.g., "masa", "onward")
+                - table_id: Custom Airtable table ID (overrides config)
+                - view: Custom Airtable view ID (overrides config)
+                - field_mapping: Custom field mapping (overrides config)
+                - date_field_id: Custom date field ID for filtering
+                - begin_date, end_date: Date filtering parameters
         """
         print("CalendarEventInfoRequest received data:", request_data)
+        
+        # Get type from request_data, default to "masa"
+        event_type = request_data.get("type", "masa")
+        config = self.TABLE_CONFIGS.get(event_type, self.TABLE_CONFIGS["masa"])
+        
+        # Table configuration (request_data params override config)
+        self.table_id = config["table_id"]
+        self.field_mapping = config["field_mapping"]
+        self.view = config["view"]
+        
+        # Auto-detect date field from mapping if not provided
+        self.date_field_id = config.get("date_field_id")
         
         # Optional date filtering
         self.begin_date = request_data.get("begin_date")
@@ -406,28 +448,28 @@ class CalendarEventInfoRequest:
         Returns:
             DataFrame with calendar events
         """
-        table_id = "tblNOb28nJXsHdwrf"  # Calendar events table
-        config = AirtableConfig.from_settings(table_id)
+        config = AirtableConfig.from_settings(self.table_id)
         wrapper = AirtableDataFrameWrapper(config)
-        mapper = FieldMapper(self.FIELD_MAPPING)
+        mapper = FieldMapper(self.field_mapping)
         
-        fields = list(self.FIELD_MAPPING.keys())
+        fields = list(self.field_mapping.keys())
         
         # Build filter formula based on date range
         filter_formula = None
-        if self.begin_date and self.end_date:
-            # Both dates provided - filter between dates
-            filter_formula = f"AND(IS_AFTER({{fldoAhFThMUITRPDe}}, '{self.begin_date}'), IS_BEFORE({{fldoAhFThMUITRPDe}}, '{self.end_date}'))"
-        elif self.begin_date:
-            # Only begin date - filter after begin_date
-            filter_formula = f"IS_AFTER({{fldoAhFThMUITRPDe}}, '{self.begin_date}')"
-        elif self.end_date:
-            # Only end date - filter before end_date
-            filter_formula = f"IS_BEFORE({{fldoAhFThMUITRPDe}}, '{self.end_date}')"
+        if self.date_field_id and (self.begin_date or self.end_date):
+            if self.begin_date and self.end_date:
+                # Both dates provided - filter between dates
+                filter_formula = f"AND(IS_AFTER({{{self.date_field_id}}}, '{self.begin_date}'), IS_BEFORE({{{self.date_field_id}}}, '{self.end_date}'))"
+            elif self.begin_date:
+                # Only begin date - filter after begin_date
+                filter_formula = f"IS_AFTER({{{self.date_field_id}}}, '{self.begin_date}')"
+            elif self.end_date:
+                # Only end date - filter before end_date
+                filter_formula = f"IS_BEFORE({{{self.date_field_id}}}, '{self.end_date}')"
         
         df = wrapper.fetch_records(
             fields=fields,
-            view="viwY7oUkaENUDAFVf",
+            view=self.view,
             filter_formula=filter_formula,
             return_fields_by_id=True
         )
@@ -435,7 +477,7 @@ class CalendarEventInfoRequest:
         # Map field IDs to readable names
         df = mapper.map_to_names(df)
         
-        logging.info(f"Fetched {len(df)} calendar events")
+        logging.info(f"Fetched {len(df)} calendar events from table {self.table_id}")
         
         return df
     
@@ -450,18 +492,23 @@ class CalendarEventInfoRequest:
         
         events = []
         for _, row in df.iterrows():
+            # Helper function to convert NaN to None
+            def safe_get(key, default=None):
+                value = row.get(key, default)
+                return None if pd.isna(value) else value
+            
             event = CalendarEventInfo(
-                id=row.get("id"),
-                date=row.get("date"),
-                start_time=row.get("start_time"),
-                end_time=row.get("end_time"),
-                event_name=row.get("event_name"),
-                tags=row.get("tags", []),
-                subject=row.get("subject"),
-                address=row.get("address"),
-                description=row.get("description", ""),
-                map_link=row.get("map_link"),
-                files=row.get("files", [])
+                id=safe_get("id"),
+                date=safe_get("date"),
+                start_time=safe_get("start_time"),
+                end_time=safe_get("end_time"),
+                event_name=safe_get("event_name"),
+                tags=safe_get("tags", []),
+                subject=safe_get("subject"),
+                address=safe_get("address"),
+                description=safe_get("description", ""),
+                map_link=safe_get("map_link"),
+                files=safe_get("files", [])
             )
             events.append(event)
         
@@ -527,6 +574,95 @@ class CalendarDataRequest:
 class CalendarEventsWithSubjectsRequest:
     """Request to get calendar events joined with subject data."""
     
+    @staticmethod
+    def _truncate_text(text: str, max_length: int = 32) -> str:
+        """
+        Truncate text to max_length characters and add ... if truncated.
+        
+        Args:
+            text: Text to truncate
+            max_length: Maximum length (default 32)
+            
+        Returns:
+            Truncated text with ... if it exceeds max_length
+        """
+        if not isinstance(text, str):
+            return ""
+        if len(text) > max_length:
+            return text[:max_length] + "..."
+        return text
+    
+    @staticmethod
+    def _extract_bold_text(text: Any) -> str:
+        """
+        Extract text from bold markers (**text**).
+        
+        Args:
+            text: Text with markdown formatting
+            
+        Returns:
+            Text from bold markers or empty string if not found
+        """
+        if not isinstance(text, str) or pd.isna(text):
+            return ""
+        
+        import re
+        # Find text between ** markers
+        match = re.search(r'\*\*([^*]+)\*\*', text)
+        if match:
+            return match.group(1).strip()
+        
+        return ""
+    
+    @staticmethod
+    def _clean_markdown(text: Any) -> str:
+        """
+        Remove markdown and formatting symbols from text.
+        
+        Args:
+            text: Text with markdown formatting
+            
+        Returns:
+            Clean text without formatting symbols
+        """
+        if not isinstance(text, str) or pd.isna(text):
+            return ""
+        
+        # Remove markdown bold markers (**)
+        text = text.replace("**", "")
+        # Remove markdown italic markers (*)
+        text = text.replace("*", "")
+        # Remove markdown underscore (__)
+        text = text.replace("__", "")
+        # Remove markdown single underscore (_)
+        text = text.replace("_", "")
+        # Remove newlines with backslash
+        text = text.replace("\\n", " ")
+        # Remove actual newlines
+        text = text.replace("\n", " ")
+        # Remove multiple spaces
+        text = " ".join(text.split())
+        
+        return text.strip()
+    
+    @staticmethod
+    def _truncate_text(text: str, max_length: int = 32) -> str:
+        """
+        Truncate text to max_length characters and add ... if truncated.
+        
+        Args:
+            text: Text to truncate
+            max_length: Maximum length (default 32)
+            
+        Returns:
+            Truncated text with ... if it exceeds max_length
+        """
+        if not isinstance(text, str):
+            return ""
+        if len(text) > max_length:
+            return text[:max_length] + "..."
+        return text
+    
     def __init__(self, request_data: Optional[Dict[str, Any]] = None):
         """
         Initialize calendar events with subjects request.
@@ -548,64 +684,103 @@ class CalendarEventsWithSubjectsRequest:
         event_request = CalendarEventInfoRequest(self.request_data)
         events_df = event_request.apply()
         
-        # Get calendar subjects
-        calendar_request = CalendarDataRequest()
-        subjects_df = calendar_request.apply()
+        if events_df.empty:
+            logging.warning("No events found")
+            return events_df
         
-        # Get teachers data
-        teachers_config = AirtableConfig.from_settings("tbl1rbYLDLHgmoSld")
-        teachers_wrapper = AirtableDataFrameWrapper(teachers_config)
-        teachers_df = teachers_wrapper.fetch_records(
-            fields=["fldBaOKMIz8JuR0xm"],
-            return_fields_by_id=True
-        )
-        teachers_df.rename(columns={"fldBaOKMIz8JuR0xm": "teacher_name"}, inplace=True)
+        # Initialize subject_name and teacher_name columns
+        events_df['subject_name'] = None
+        events_df['teacher_name'] = None
         
-        # The subject field in events contains a list with subject IDs
-        # We need to extract the first ID and join
-        if not events_df.empty and 'subject' in events_df.columns:
-            # Extract first subject ID from list
-            events_df['subject_id'] = events_df['subject'].apply(
-                lambda x: x[0] if isinstance(x, list) and len(x) > 0 else x
+        # If subject column exists, try to join with subjects
+        if 'subject' in events_df.columns:
+            # Get calendar subjects
+            calendar_request = CalendarDataRequest()
+            subjects_df = calendar_request.apply()
+            
+            # Get teachers data
+            teachers_config = AirtableConfig.from_settings("tbl1rbYLDLHgmoSld")
+            teachers_wrapper = AirtableDataFrameWrapper(teachers_config)
+            teachers_df = teachers_wrapper.fetch_records(
+                fields=["fldBaOKMIz8JuR0xm"],
+                return_fields_by_id=True
             )
+            teachers_df.rename(columns={"fldBaOKMIz8JuR0xm": "teacher_name"}, inplace=True)
             
-            # Select only required columns from subjects (id for join, name, teacher_id)
-            subjects_selected = subjects_df[['id', 'name', 'teacher_id']].copy()
+            # Check if subject is present (not empty/NaN) and extract first ID
+            def extract_subject_id(x):
+                if pd.isna(x):
+                    return None
+                if isinstance(x, list) and len(x) > 0:
+                    return x[0]
+                return None
             
-            # Join events with subjects on subject_id = id
-            merged_df = events_df.merge(
-                subjects_selected,
-                left_on='subject_id',
-                right_on='id',
-                how='left',
-                suffixes=('', '_subject')
-            )
+            events_df['subject_id'] = events_df['subject'].apply(extract_subject_id)
             
-            # Rename subject name column for clarity
-            merged_df.rename(columns={'name': 'subject_name'}, inplace=True)
+            # Determine which rows have subject data
+            has_subject = events_df['subject_id'].notna()
             
-            # Extract teacher_id from list if it exists
-            merged_df['teacher_id_extracted'] = merged_df['teacher_id'].apply(
-                lambda x: x[0] if isinstance(x, list) and len(x) > 0 else x
-            )
-            
-            # Join with teachers to get teacher name
-            merged_df = merged_df.merge(
-                teachers_df[['id', 'teacher_name']],
-                left_on='teacher_id_extracted',
-                right_on='id',
-                how='left',
-                suffixes=('', '_teacher')
-            )
-            
-            # Drop unnecessary columns
-            columns_to_drop = ['id_subject', 'id_teacher', 'teacher_id', 'teacher_id_extracted']
-            merged_df.drop(columns=[col for col in columns_to_drop if col in merged_df.columns], inplace=True)
-            
-            logging.info(f"Joined {len(merged_df)} events with subjects and teachers")
-            return merged_df
+            # Join with subjects only for events that have subject
+            if has_subject.any():
+                subjects_selected = subjects_df[['id', 'name', 'teacher_id']].copy()
+                
+                # Join only rows with subject_id
+                join_rows = events_df[has_subject].merge(
+                    subjects_selected,
+                    left_on='subject_id',
+                    right_on='id',
+                    how='left',
+                    suffixes=('', '_subject')
+                )
+                
+                # Extract teacher_id from list if it exists
+                join_rows['teacher_id_extracted'] = join_rows['teacher_id'].apply(
+                    lambda x: x[0] if isinstance(x, list) and len(x) > 0 else x
+                )
+                
+                # Join with teachers to get teacher name
+                join_rows = join_rows.merge(
+                    teachers_df[['id', 'teacher_name']],
+                    left_on='teacher_id_extracted',
+                    right_on='id',
+                    how='left',
+                    suffixes=('', '_teacher')
+                )
+                
+                # Copy subject_name and teacher_name back to events_df
+                events_df.loc[has_subject, 'subject_name'] = join_rows['name'].values
+                events_df.loc[has_subject, 'teacher_name'] = join_rows['teacher_name'].values
         
-        logging.warning("No events found or subject column missing")
+        # Fill NaN or missing subject_name with cleaned description (from description only)
+        if 'description' in events_df.columns:
+            no_subject_name = pd.isna(events_df['subject_name'])
+            
+            # First try to extract bold text (**...** )
+            events_df.loc[no_subject_name, 'subject_name'] = events_df.loc[no_subject_name, 'description'].apply(
+                lambda x: self._extract_bold_text(x)
+            )
+            
+            # If no bold text found, use cleaned description
+            still_empty = pd.isna(events_df['subject_name']) | (events_df['subject_name'] == '')
+            events_df.loc[still_empty, 'subject_name'] = events_df.loc[still_empty, 'description'].apply(
+                lambda x: self._clean_markdown(x)
+            )
+            
+            # Truncate ONLY subject_name that came from description (still_empty mask tracks these)
+            events_df.loc[still_empty, 'subject_name'] = events_df.loc[still_empty, 'subject_name'].apply(self._truncate_text)
+        
+        # Clean up intermediate columns
+        columns_to_drop = ['subject', 'subject_id', 'teacher_id', 'id_subject', 'id_teacher', 'teacher_id_extracted']
+        events_df.drop(columns=[col for col in columns_to_drop if col in events_df.columns], inplace=True)
+        
+        # Replace all NaN with None at DataFrame level
+        import numpy as np
+        for col in events_df.columns:
+            events_df[col] = events_df[col].apply(
+                lambda x: None if (isinstance(x, float) and np.isnan(x)) else x
+            )
+        
+        logging.info(f"Processed {len(events_df)} events with subjects and teachers")
         return events_df
     
     def apply_as_list(self) -> List[Dict[str, Any]]:
