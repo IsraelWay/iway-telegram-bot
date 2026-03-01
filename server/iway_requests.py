@@ -440,6 +440,10 @@ class CalendarEventInfoRequest:
         self.address = request_data.get("address")
         self.tags = request_data.get("tags", [])
         self.files = request_data.get("files", [])
+        
+        # Optional: specify which fields to fetch (for performance)
+        # If not specified, fetch all fields from field_mapping
+        self.fields_subset = request_data.get("fields_subset")
 
     def apply(self) -> pd.DataFrame:
         """
@@ -452,7 +456,14 @@ class CalendarEventInfoRequest:
         wrapper = AirtableDataFrameWrapper(config)
         mapper = FieldMapper(self.field_mapping)
         
-        fields = list(self.field_mapping.keys())
+        # Determine which fields to fetch
+        if self.fields_subset:
+            # Map field names to field IDs for the subset
+            reverse_mapping = {v: k for k, v in self.field_mapping.items()}
+            fields = [reverse_mapping[name] for name in self.fields_subset if name in reverse_mapping]
+        else:
+            # Fetch all fields
+            fields = list(self.field_mapping.keys())
         
         # Build filter formula based on date range
         filter_formula = None
@@ -571,6 +582,248 @@ class CalendarDataRequest:
         return df.to_dict('records')
 
 
+class GetTeachersRequest:
+    """Request to get all teachers from Airtable."""
+    
+    TEACHERS_TABLE_ID = "tbl1rbYLDLHgmoSld"
+    TEACHER_NAME_FIELD = "fldBaOKMIz8JuR0xm"
+    
+    def apply(self) -> pd.DataFrame:
+        """
+        Fetch all teachers from Airtable.
+        
+        Returns:
+            DataFrame with teachers data
+        """
+        config = AirtableConfig.from_settings(self.TEACHERS_TABLE_ID)
+        wrapper = AirtableDataFrameWrapper(config)
+        
+        teachers_df = wrapper.fetch_records(
+            fields=[self.TEACHER_NAME_FIELD],
+            return_fields_by_id=True
+        )
+        
+        # Rename the teacher name field to readable name
+        teachers_df.rename(columns={self.TEACHER_NAME_FIELD: "teacher_name"}, inplace=True)
+        
+        logging.info(f"Fetched {len(teachers_df)} teachers from table {self.TEACHERS_TABLE_ID}")
+        
+        return teachers_df
+    
+    def apply_as_list(self) -> List[Dict[str, Any]]:
+        """
+        Fetch all teachers as list of dictionaries.
+        
+        Returns:
+            List of teacher dictionaries
+        """
+        df = self.apply()
+        return df.to_dict('records')
+
+
+class GetSpecificEventRequest:
+    """Request to get a specific calendar event by ID with subject and teacher information."""
+    
+    # Predefined table configurations (same as CalendarEventInfoRequest)
+    TABLE_CONFIGS = {
+        "masa": {
+            "table_id": "tblNOb28nJXsHdwrf",
+            "view": "viwY7oUkaENUDAFVf",
+            "field_mapping": {
+                "fldoAhFThMUITRPDe": "date",
+                "fldj0YbUXN327CsbH": "start_time",
+                "fldxKsIvsOub8aQiv": "end_time",
+                "fldZ7fbtjgCPm235e": "event_name",
+                "fldAyvS7HCA0Rk0sr": "tags",
+                "fld31JYAs3bQDKdf1": "subject",
+                "fldpX2lGAJLsVIBnC": "address",
+                "fldG1J7zXt6lH7dnN": "description",
+                "fldcwesZdoxH7CkSk": "map_link",
+                "fldl1bRLAbitKHbSh": "files"
+            }
+        },
+        "onward": {
+            "table_id": "tblcsV0OknsNj45As",
+            "view": "viwsBQJYW0jaBLy1U",
+            "field_mapping": {
+                "fldW2Jk6Hb8Xw0i0Z": "date",
+                "fldIEI9AUrynJt1kU": "start_time",
+                "fldfZiMRnsC3AJ4Gm": "end_time",
+                "fldoLZ99gU7aYTCer": "event_name",
+                "fld4IYcCYCsx0J3A0": "tags",
+                "fldsFtWgpHGbfBMoe": "subject",
+                "fldOBMjmxngNxzawP": "address",
+                "fldzrT42MddJ5SXpc": "description",
+                "fldDRhzgYDLSKigW6": "map_link",
+                "fldhGX7fxqWw3qJYo": "files"
+            }
+        }
+    }
+    
+    def __init__(self, event_id: str, event_type: str = "masa", cached_teachers_df: Optional[pd.DataFrame] = None, cached_subjects_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize request for specific event.
+        
+        Args:
+            event_id: The Airtable record ID of the event
+            event_type: Type of event - "masa" or "onward" (default: "masa")
+            cached_teachers_df: Optional preloaded teachers DataFrame
+            cached_subjects_df: Optional preloaded subjects DataFrame
+        """
+        self.event_id = event_id
+        self.event_type = event_type
+        self.cached_teachers_df = cached_teachers_df
+        self.cached_subjects_df = cached_subjects_df
+        
+        config = self.TABLE_CONFIGS.get(event_type, self.TABLE_CONFIGS["masa"])
+        self.table_id = config["table_id"]
+        self.field_mapping = config["field_mapping"]
+        self.view = config["view"]
+    
+    def apply(self) -> pd.DataFrame:
+        """
+        Fetch a specific event by ID and enrich with subject and teacher data.
+        
+        Returns:
+            DataFrame with single event row with subject_name and teacher_name
+        """
+        # Fetch the specific event directly using Airtable API
+        base_id = Settings.airtable_base_id()
+        api_key = Settings.airtable_api_key()
+        
+        url = f"https://api.airtable.com/v0/{base_id}/{self.table_id}/{self.event_id}"
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Request fields by field ID so we can map them properly
+        params = {
+            "returnFieldsByFieldId": "true"
+        }
+        
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            
+            if response.status_code == 404:
+                logging.warning(f"Event {self.event_id} not found in table {self.table_id}")
+                return pd.DataFrame()
+            
+            if response.status_code != 200:
+                logging.error(f"Error fetching event: {response.status_code} {response.text}")
+                return pd.DataFrame()
+            
+            record = response.json()
+            
+            # Convert single record to DataFrame format
+            row_data = {'id': record.get('id')}
+            row_data.update(record.get('fields', {}))
+            
+            df = pd.DataFrame([row_data])
+            
+            # Map field IDs to readable names
+            mapper = FieldMapper(self.field_mapping)
+            df = mapper.map_to_names(df)
+            
+            # Initialize subject_name and teacher_name columns
+            df['subject_name'] = None
+            df['teacher_name'] = None
+            
+            # If subject column exists, try to join with subjects and teachers
+            if 'subject' in df.columns and not pd.isna(df.iloc[0]['subject']):
+                # Get calendar subjects - use cached if available, otherwise fetch
+                if self.cached_subjects_df is not None:
+                    subjects_df = self.cached_subjects_df.copy()
+                else:
+                    calendar_request = CalendarDataRequest()
+                    subjects_df = calendar_request.apply()
+                
+                # Get teachers data - use cached if available, otherwise fetch
+                if self.cached_teachers_df is not None:
+                    teachers_df = self.cached_teachers_df.copy()
+                else:
+                    teachers_config = AirtableConfig.from_settings("tbl1rbYLDLHgmoSld")
+                    teachers_wrapper = AirtableDataFrameWrapper(teachers_config)
+                    teachers_df = teachers_wrapper.fetch_records(
+                        fields=["fldBaOKMIz8JuR0xm"],
+                        return_fields_by_id=True
+                    )
+                    teachers_df.rename(columns={"fldBaOKMIz8JuR0xm": "teacher_name"}, inplace=True)
+                
+                # Extract subject ID from list
+                def extract_subject_id(x):
+                    if pd.isna(x):
+                        return None
+                    if isinstance(x, list) and len(x) > 0:
+                        return x[0]
+                    return None
+                
+                subject_id = extract_subject_id(df.iloc[0]['subject'])
+                
+                if subject_id:
+                    # Get subject data
+                    subject_row = subjects_df[subjects_df['id'] == subject_id]
+                    
+                    if not subject_row.empty:
+                        df.loc[0, 'subject_name'] = subject_row.iloc[0].get('name')
+                        
+                        # Get teacher ID from subject
+                        teacher_id = subject_row.iloc[0].get('teacher_id')
+                        if teacher_id:
+                            # Extract teacher ID if it's a list
+                            if isinstance(teacher_id, list) and len(teacher_id) > 0:
+                                teacher_id = teacher_id[0]
+                            
+                            # Get teacher name
+                            teacher_row = teachers_df[teachers_df['id'] == teacher_id]
+                            if not teacher_row.empty:
+                                df.loc[0, 'teacher_name'] = teacher_row.iloc[0].get('teacher_name')
+            
+            # Clean up intermediate columns (only drop 'subject', keep subject_name and teacher_name)
+            columns_to_drop = ['subject']
+            df.drop(columns=[col for col in columns_to_drop if col in df.columns], inplace=True)
+            
+            # Replace NaN with None
+            df = df.replace({pd.NA: None, pd.NaT: None})
+            df = df.where(pd.notna(df), None)
+            
+            logging.info(f"Fetched specific event {self.event_id}")
+            return df
+        
+        except Exception as e:
+            logging.error(f"Error fetching event {self.event_id}: {e}")
+            return pd.DataFrame()
+    
+    def apply_as_dict(self) -> Dict[str, Any]:
+        """
+        Fetch specific event as dictionary.
+        
+        Returns:
+            Event dictionary with subject and teacher information (only mapped fields)
+        """
+        df = self.apply()
+        if df.empty:
+            return {}
+        
+        result = df.iloc[0].to_dict()
+        
+        # Define which fields to include in the response
+        # Include all mapped field names (except 'files' and 'subject') + id + subject_name + teacher_name
+        mapped_names = set(self.field_mapping.values()) - {'files', 'subject'}
+        allowed_fields = mapped_names | {'id', 'subject_name', 'teacher_name'}
+        
+        # Initialize all fields with None
+        filtered_result = {field: None for field in allowed_fields}
+        
+        # Update with actual values from result
+        for k, v in result.items():
+            if k in allowed_fields:
+                filtered_result[k] = v
+        
+        return filtered_result
+
+
 class CalendarEventsWithSubjectsRequest:
     """Request to get calendar events joined with subject data."""
     
@@ -663,14 +916,20 @@ class CalendarEventsWithSubjectsRequest:
             return text[:max_length] + "..."
         return text
     
-    def __init__(self, request_data: Optional[Dict[str, Any]] = None):
+    def __init__(self, request_data: Optional[Dict[str, Any]] = None, cached_teachers_df: Optional[pd.DataFrame] = None, cached_subjects_df: Optional[pd.DataFrame] = None, list_mode: bool = False):
         """
         Initialize calendar events with subjects request.
         
         Args:
             request_data: Optional dictionary with request parameters (e.g., date for filtering)
+            cached_teachers_df: Optional preloaded teachers DataFrame to avoid Airtable requests
+            cached_subjects_df: Optional preloaded subjects DataFrame to avoid Airtable requests
+            list_mode: If True, fetch only minimal fields for list view (performance optimization)
         """
         self.request_data = request_data or {}
+        self.cached_teachers_df = cached_teachers_df
+        self.cached_subjects_df = cached_subjects_df
+        self.list_mode = list_mode
     
     def apply(self) -> pd.DataFrame:
         """
@@ -679,6 +938,11 @@ class CalendarEventsWithSubjectsRequest:
         Returns:
             DataFrame with events joined with subject name and teacher name
         """
+        # If list_mode is enabled, only fetch minimal fields for performance
+        if self.list_mode:
+            # Only fetch fields needed for list view: date, start_time, end_time, event_name, tags
+            self.request_data['fields_subset'] = ['date', 'start_time', 'end_time', 'event_name', 'tags']
+        
         # Get calendar events with date range
         # No default dates - let the user specify or get all events
         event_request = CalendarEventInfoRequest(self.request_data)
@@ -688,24 +952,35 @@ class CalendarEventsWithSubjectsRequest:
             logging.warning("No events found")
             return events_df
         
+        # Skip subject and teacher enrichment in list mode for performance
+        if self.list_mode:
+            logging.info(f"List mode: returning {len(events_df)} events without subject/teacher enrichment")
+            return events_df
+        
         # Initialize subject_name and teacher_name columns
         events_df['subject_name'] = None
         events_df['teacher_name'] = None
         
         # If subject column exists, try to join with subjects
         if 'subject' in events_df.columns:
-            # Get calendar subjects
-            calendar_request = CalendarDataRequest()
-            subjects_df = calendar_request.apply()
+            # Get calendar subjects - use cached if available, otherwise fetch
+            if self.cached_subjects_df is not None:
+                subjects_df = self.cached_subjects_df.copy()
+            else:
+                calendar_request = CalendarDataRequest()
+                subjects_df = calendar_request.apply()
             
-            # Get teachers data
-            teachers_config = AirtableConfig.from_settings("tbl1rbYLDLHgmoSld")
-            teachers_wrapper = AirtableDataFrameWrapper(teachers_config)
-            teachers_df = teachers_wrapper.fetch_records(
-                fields=["fldBaOKMIz8JuR0xm"],
-                return_fields_by_id=True
-            )
-            teachers_df.rename(columns={"fldBaOKMIz8JuR0xm": "teacher_name"}, inplace=True)
+            # Get teachers data - use cached if available, otherwise fetch
+            if self.cached_teachers_df is not None:
+                teachers_df = self.cached_teachers_df.copy()
+            else:
+                teachers_config = AirtableConfig.from_settings("tbl1rbYLDLHgmoSld")
+                teachers_wrapper = AirtableDataFrameWrapper(teachers_config)
+                teachers_df = teachers_wrapper.fetch_records(
+                    fields=["fldBaOKMIz8JuR0xm"],
+                    return_fields_by_id=True
+                )
+                teachers_df.rename(columns={"fldBaOKMIz8JuR0xm": "teacher_name"}, inplace=True)
             
             # Check if subject is present (not empty/NaN) and extract first ID
             def extract_subject_id(x):
@@ -747,6 +1022,35 @@ class CalendarEventsWithSubjectsRequest:
                     suffixes=('', '_teacher')
                 )
                 
+                # Check if any teacher names are missing (not found in cache)
+                missing_teacher_mask = pd.isna(join_rows['teacher_name'])
+                if missing_teacher_mask.any() and self.cached_teachers_df is not None:
+                    # Teacher IDs not found in cache - refresh the cache and retry
+                    logging.warning("Some teacher IDs not found in cache, refreshing teachers cache...")
+                    
+                    # Import here to avoid circular dependency
+                    from server.airtable_data import refresh_teachers_dict
+                    refresh_teachers_dict()
+                    
+                    # Re-fetch teachers cache (updated version)
+                    teachers_config = AirtableConfig.from_settings("tbl1rbYLDLHgmoSld")
+                    teachers_wrapper = AirtableDataFrameWrapper(teachers_config)
+                    teachers_df = teachers_wrapper.fetch_records(
+                        fields=["fldBaOKMIz8JuR0xm"],
+                        return_fields_by_id=True
+                    )
+                    teachers_df.rename(columns={"fldBaOKMIz8JuR0xm": "teacher_name"}, inplace=True)
+                    
+                    # Re-do the teacher join with refreshed data
+                    join_rows = join_rows.drop(columns=['teacher_name', 'id_teacher'], errors='ignore')
+                    join_rows = join_rows.merge(
+                        teachers_df[['id', 'teacher_name']],
+                        left_on='teacher_id_extracted',
+                        right_on='id',
+                        how='left',
+                        suffixes=('', '_teacher')
+                    )
+                
                 # Copy subject_name and teacher_name back to events_df
                 events_df.loc[has_subject, 'subject_name'] = join_rows['name'].values
                 events_df.loc[has_subject, 'teacher_name'] = join_rows['teacher_name'].values
@@ -785,8 +1089,16 @@ class CalendarEventsWithSubjectsRequest:
         Fetch calendar events with subjects as list of dictionaries.
         
         Returns:
-            List of event dictionaries with subject information
+            List of event dictionaries with limited fields
         """
         df = self.apply()
-        return df.to_dict('records')
+        result = df.to_dict('records')
+        
+        # Replace NaN with None in the result
+        for record in result:
+            for key, value in record.items():
+                if pd.isna(value):
+                    record[key] = None
+        
+        return result
 
