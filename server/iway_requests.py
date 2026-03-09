@@ -897,6 +897,40 @@ class CalendarEventsWithSubjectsRequest:
         text = " ".join(text.split())
         
         return text.strip()
+
+    @staticmethod
+    def _clean_text_simple(text: Any) -> str:
+        """
+        Remove markdown, emoji and special symbols from text (for first-line extraction).
+        
+        Args:
+            text: Text to clean
+            
+        Returns:
+            Clean plain text without formatting
+        """
+        if not isinstance(text, str) or pd.isna(text):
+            return ""
+        
+        import re
+        
+        # Get first line only
+        first_line = text.split('\n')[0].strip()
+        
+        # Remove markdown bold markers (**)
+        first_line = first_line.replace("**", "")
+        # Remove markdown italic markers (*)
+        first_line = first_line.replace("*", "")
+        # Remove markdown underscore (__) and (_)
+        first_line = first_line.replace("__", "").replace("_", "")
+        # Remove emoji (basic emoji range)
+        first_line = re.sub(r'[\U0001F300-\U0001F9FF]+', '', first_line)
+        # Remove other special unicode characters (keep only basic text)
+        first_line = re.sub(r'[^\w\s\-\.,:;!?а-яА-ЯёЁ]', '', first_line)
+        # Clean multiple spaces
+        first_line = " ".join(first_line.split())
+        
+        return first_line.strip()
     
     @staticmethod
     def _truncate_text(text: str, max_length: int = 32) -> str:
@@ -938,10 +972,9 @@ class CalendarEventsWithSubjectsRequest:
         Returns:
             DataFrame with events joined with subject name and teacher name
         """
-        # If list_mode is enabled, only fetch minimal fields for performance
+        # If list_mode is enabled, fetch minimal fields plus subject for subject_name enrichment
         if self.list_mode:
-            # Only fetch fields needed for list view: date, start_time, end_time, event_name, tags
-            self.request_data['fields_subset'] = ['date', 'start_time', 'end_time', 'event_name', 'tags']
+            self.request_data['fields_subset'] = ['date', 'start_time', 'end_time', 'tags', 'subject', 'description']
         
         # Get calendar events with date range
         # No default dates - let the user specify or get all events
@@ -952,9 +985,51 @@ class CalendarEventsWithSubjectsRequest:
             logging.warning("No events found")
             return events_df
         
-        # Skip subject and teacher enrichment in list mode for performance
+        # In list_mode, enrich only subject_name (without teacher enrichment) and
+        # return subject_name instead of event_name.
         if self.list_mode:
-            logging.info(f"List mode: returning {len(events_df)} events without subject/teacher enrichment")
+            events_df['subject_name'] = None
+
+            if 'subject' in events_df.columns:
+                if self.cached_subjects_df is not None:
+                    subjects_df = self.cached_subjects_df.copy()
+                else:
+                    calendar_request = CalendarDataRequest()
+                    subjects_df = calendar_request.apply()
+
+                def extract_subject_id(x):
+                    if pd.isna(x):
+                        return None
+                    if isinstance(x, list) and len(x) > 0:
+                        return x[0]
+                    return None
+
+                events_df['subject_id'] = events_df['subject'].apply(extract_subject_id)
+                has_subject = events_df['subject_id'].notna()
+
+                if has_subject.any() and not subjects_df.empty:
+                    subjects_selected = subjects_df[['id', 'name']].copy()
+                    join_rows = events_df[has_subject].merge(
+                        subjects_selected,
+                        left_on='subject_id',
+                        right_on='id',
+                        how='left'
+                    )
+                    events_df.loc[has_subject, 'subject_name'] = join_rows['name'].values
+
+            # Fallback to first line of description when subject_name is missing
+            # Clean text from emoji and special characters
+            no_subject_name = pd.isna(events_df['subject_name']) | (events_df['subject_name'] == '')
+            if 'description' in events_df.columns and no_subject_name.any():
+                events_df.loc[no_subject_name, 'subject_name'] = events_df.loc[no_subject_name, 'description'].apply(self._clean_text_simple)
+
+            columns_to_drop = ['subject', 'subject_id', 'description']
+            events_df.drop(columns=[col for col in columns_to_drop if col in events_df.columns], inplace=True)
+
+            events_df = events_df.replace({pd.NA: None, pd.NaT: None})
+            events_df = events_df.where(pd.notna(events_df), None)
+
+            logging.info(f"List mode: processed {len(events_df)} events with subject_name")
             return events_df
         
         # Initialize subject_name and teacher_name columns
