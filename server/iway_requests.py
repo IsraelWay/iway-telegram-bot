@@ -80,6 +80,8 @@ class AirtableRequest:
         elif "subject" in required_fields:
             raise Exception("No required param subject")
 
+        self.show_footer = request_data.get('show_footer', True)
+
         if "cc" in request_data:
             self.cc = request_data['cc']
         elif "cc" in required_fields:

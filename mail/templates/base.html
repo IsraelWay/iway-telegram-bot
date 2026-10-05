@@ -42,6 +42,7 @@
 
             {% block content %} {% endblock %}
 
+            {% if show_footer %}
             {% if id_record %}
             <table id="rec426960945" style="width:100%; border-collapse:collapse; border-spacing:0; margin:0; border:0;"
                    cellpadding="0" cellspacing="0" data-record-type="645">
@@ -142,6 +143,7 @@
                     </td>
                 </tr>
             </table><!--/record-->
+            {% endif %}
         </td>
     </tr>
 </table><!--/allrecords--></body>

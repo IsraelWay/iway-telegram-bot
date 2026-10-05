@@ -629,7 +629,8 @@ def send_email():
         id_record=air_request.id_record,
         actions=air_request.actions,
         main_title=air_request.main_title,
-        email=air_request.email
+        email=air_request.email,
+        show_footer=air_request.show_footer
     )
 
     attachments = None
