@@ -642,7 +642,11 @@ def send_email():
 
     mail_service.send(to=air_request.email, cc=air_request.cc if air_request.cc else None,
                       subject=air_request.subject if air_request.subject else "IsraelWay team",
-                      name=air_request.full_name, content=mail_html, attachments=attachments)
+                      name=air_request.full_name, content=mail_html, attachments=attachments,
+                      sender={
+                          "name": "IsraelWay Team" if air_request.show_footer else "Derech Erez team",
+                          "email": "info@israelway.com"
+                      })
 
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 

@@ -15,7 +15,8 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = subject  # "Hi there! This is IsraelWay."
     html_content = content
-    sender = {"name": "IsraelWay Team", "email": "info@israelway.com"}
+    if sender is None:
+        sender = {"name": "IsraelWay Team", "email": "info@israelway.com"}
     to = [{"email": to, "name": name}]
     # bcc = [{"email": "info@israelway.com", "name": "IsraelWay Info"}]
 
