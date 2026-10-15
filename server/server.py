@@ -644,7 +644,7 @@ def send_email():
                       subject=air_request.subject if air_request.subject else "IsraelWay team",
                       name=air_request.full_name, content=mail_html, attachments=attachments,
                       sender={
-                          "name": "IsraelWay Team" if air_request.show_footer else "Derech Erez team",
+                          "name": "IsraelWay Team" if air_request.show_footer else "Derech Erez Team",
                           "email": "info@israelway.com"
                       })
 
