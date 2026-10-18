@@ -646,7 +646,8 @@ def send_email():
                       sender={
                           "name": "IsraelWay Team" if air_request.show_footer else "Derech Erez Team",
                           "email": "info@israelway.com"
-                      })
+                      },
+                      team_copy_name="IsraelWay Team" if air_request.show_footer else "Derech Erez Team")
 
     return DetailedResponse(result=True, message="Email sent successfully").__dict__
 

@@ -11,19 +11,20 @@ configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = Settings.sendinblue_key()
 
 
-def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachments=None):
+def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachments=None, team_copy_name=None):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = subject  # "Hi there! This is IsraelWay."
     html_content = content
     if sender is None:
         sender = {"name": "IsraelWay Team", "email": "info@israelway.com"}
     to = [{"email": to, "name": name}]
+    team_name = team_copy_name or sender.get("name", "IsraelWay Team")
     bcc = [
         {"email": email, "name": "IsraelWay copy"}
         for email in Settings.email_bcc_recipients()
     ]
 
-    _cc = [{"email": "info@israelway.com", "name": "IsraelWay team"}]
+    _cc = [{"email": "info@israelway.com", "name": team_name}]
     try:
         if cc:
             _cc.append({"email": cc, "name": "IsraelWay copy"})
