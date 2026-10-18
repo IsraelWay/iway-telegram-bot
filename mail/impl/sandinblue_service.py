@@ -18,7 +18,10 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
     if sender is None:
         sender = {"name": "IsraelWay Team", "email": "info@israelway.com"}
     to = [{"email": to, "name": name}]
-    # bcc = [{"email": "info@israelway.com", "name": "IsraelWay Info"}]
+    bcc = [
+        {"email": email, "name": "IsraelWay copy"}
+        for email in Settings.email_bcc_recipients()
+    ]
 
     _cc = [{"email": "info@israelway.com", "name": "IsraelWay team"}]
     try:
@@ -28,7 +31,7 @@ def send(to, name, content, subject, _tags=None, sender=None, cc=None, attachmen
         print("Error on cc in email: %s\n" % e)
 
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=html_content, sender=sender, subject=subject,
-                                                   tags=_tags, cc=_cc, attachment=attachments)
+                                                   tags=_tags, cc=_cc, bcc=bcc or None, attachment=attachments)
     try:
         api_response = api_instance.send_transac_email(send_smtp_email)
         pprint(api_response)

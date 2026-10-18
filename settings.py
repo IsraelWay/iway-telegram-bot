@@ -57,6 +57,14 @@ class Settings:
         return os.environ[f"SENDINBLUE_KEY{'_TEST' if Settings.IS_TEST else ''}"]
 
     @staticmethod
+    def email_bcc_recipients():
+        return [
+            email.strip()
+            for email in os.getenv("EMAIL_BCC", "").split(",")
+            if email.strip()
+        ]
+
+    @staticmethod
     def auth_token():
         return os.environ[f"AUTH_TOKEN{'_TEST' if Settings.IS_TEST else ''}"]
 
